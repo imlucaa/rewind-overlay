@@ -1,4 +1,4 @@
-# RR Overlay
+# Overlay
 
 A Retro Rewind VR and RR Lounge MMR overlay for OBS that runs in the browser. Nothing to download.
 

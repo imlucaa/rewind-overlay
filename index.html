@@ -3,27 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RR Overlay</title>
+    <title>Overlay</title>
     <meta name="description" content="Retro Rewind VR and RR Lounge MMR overlay for OBS, in the browser." />
     <meta name="theme-color" content="#09090b" />
     <link rel="preconnect" href="https://api.fontshare.com" />
     <!-- The font loads without holding up the page; the system font shows until it arrives. -->
     <link rel="preload" as="style" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" />
     <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="settings.css?v=19" />
+    <link rel="stylesheet" href="settings.css?v=20" />
   </head>
   <body>
     <div class="app">
       <aside class="sidebar">
-        <a class="brand" href="./">RR Overlay</a>
+        <a class="brand" href="./">Overlay</a>
         <nav class="nav" id="nav" aria-label="Settings"></nav>
       </aside>
 
       <header class="topbar">
-        <div class="heading">
-          <h1 id="title">Player</h1>
-          <span class="status" id="status" hidden></span>
-        </div>
+        <div></div>
         <div class="actions">
           <a class="button" id="open" href="#" target="_blank" rel="noopener">Open</a>
           <button class="button primary" id="copy" type="button">Copy link</button>
@@ -45,6 +42,6 @@
         </div>
       </section>
     </div>
-    <script src="settings.js?v=19"></script>
+    <script src="settings.js?v=20"></script>
   </body>
 </html>

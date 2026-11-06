@@ -562,29 +562,6 @@ input[type="range"] {
   display: none;
 }
 
-/* ---------- live status (top bar) ---------- */
-.heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.status {
-  color: var(--soft);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.status.live {
-  color: var(--muted);
-}
-
-.status[hidden] {
-  display: none;
-}
-
 /* ---------- look pictures (style picker) ---------- */
 .look {
   display: grid;
