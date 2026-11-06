@@ -237,11 +237,14 @@
     wrap.className = 'styles';
     wrap.setAttribute('role', 'radiogroup');
     wrap.setAttribute('aria-label', 'Style');
+    // A small drawing of each look: a mini card, or the number in the game's own digits.
+    const card = '<span class="mini-card"><i></i><span><b></b><b></b></span><em>9,044</em></span>';
+    const hud = '<span class="mini-hud">' + [...'9044'].map(d => `<img src="overlay/font/${d}.png" alt="">`).join('') + '</span>';
     const pick = (value, title, sub) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.setAttribute('role', 'radio');
-      b.innerHTML = '<strong></strong><small></small>';
+      b.innerHTML = `<span class="look">${value === 'hud' ? hud : card}</span><strong></strong><small></small>`;
       b.querySelector('strong').textContent = title;
       b.querySelector('small').textContent = sub;
       b.addEventListener('click', () => {
@@ -256,7 +259,7 @@
       syncs.push(() => b.setAttribute('aria-checked', String((value === 'hud') === hudLook())));
       return b;
     };
-    wrap.append(pick('card', 'Card', 'Border, background, all options'), pick('hud', 'Race HUD', 'Mario Kart Wii font, no card'));
+    wrap.append(pick('card', 'Card', 'Border, background, Mii'), pick('hud', 'Race HUD', 'Game font, no card'));
     rows.push({ el: wrap });
     return wrap;
   }
@@ -389,6 +392,7 @@
   const empty = document.getElementById('empty');
   const open = document.getElementById('open');
   let previewTimer = 0;
+  let lastWatched = '';
   const fromFile = location.protocol === 'file:';
 
   // The overlay lays out at least FRAME px wide, then is scaled down to the stage, so the card always fits.
@@ -404,6 +408,41 @@
   const missing = () => (mmr() ? 'Enter your RR Lounge name' : 'Enter your friend code');
 
 
+  // The number the overlay will show, read the same way it does, so a wrong code or name shows up here first.
+  const status = document.getElementById('status');
+  let statusTimer = 0;
+  let statusAsk = 0;
+  async function readStatus() {
+    const ask = ++statusAsk;
+    const say = (text, live) => {
+      if (ask !== statusAsk) return;
+      status.hidden = !text;
+      status.textContent = text;
+      status.classList.toggle('live', !!live);
+    };
+    if (!valid() || fromFile) return say('');
+    try {
+      if (mmr()) {
+        const board = await (await fetch(`https://rr-lounge.com/api/leaderboard?category=${settings.player.ladder}`, { cache: 'no-store' })).json();
+        const name = settings.player.loungeName.trim().toLowerCase();
+        const found = (board.players || []).find(p => p.name.toLowerCase() === name);
+        say(found ? `${found.mmr.toLocaleString('en-US')} MMR` : 'Name not found', !!found);
+      } else {
+        const d = settings.player.friendCode.replace(/\D/g, '');
+        const res = await fetch(`https://rwfc.net/api/leaderboard/player/${d.slice(0, 4)}-${d.slice(4, 8)}-${d.slice(8)}`, { cache: 'no-store' });
+        const player = res.ok ? await res.json() : null;
+        say(player ? `${player.vr.toLocaleString('en-US')} VR` : 'Code not found', !!player);
+      }
+    } catch {
+      say('Offline');
+    }
+  }
+  const checkStatus = () => {
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(readStatus, 600);
+  };
+  setInterval(() => document.hidden || readStatus(), 60000);
+
   function changed() {
     for (const { el, when } of rows) el.hidden = when ? !when() : false;
     // With MMR picked, the labels say MMR.
@@ -415,6 +454,11 @@
     note.textContent = '';
     empty.textContent = fromFile ? 'The preview needs the site served over http, not opened as a file.' : ok ? '' : missing();
     open.setAttribute('aria-disabled', String(!ok));
+    const watched = JSON.stringify([settings.player.source, settings.player.friendCode, settings.player.loungeName, settings.player.ladder]);
+    if (watched !== lastWatched) {
+      lastWatched = watched;
+      checkStatus();
+    }
     clearTimeout(previewTimer);
     previewTimer = setTimeout(() => {
       const url = ok && !fromFile ? link() : 'about:blank';
@@ -433,7 +477,8 @@
     changed();
   });
 
-  document.getElementById('copy').addEventListener('click', async () => {
+  const copy = document.getElementById('copy');
+  copy.addEventListener('click', async () => {
     if (!valid()) {
       show(sections[0]);
       note.textContent = missing();
@@ -441,7 +486,10 @@
     }
     try {
       await navigator.clipboard.writeText(link());
-      note.textContent = 'Copied. Paste it into an OBS Browser source (1920 × 1080).';
+      note.textContent = 'Paste it into an OBS Browser source (1920 × 1080).';
+      copy.textContent = 'Copied';
+      clearTimeout(copy.timer);
+      copy.timer = setTimeout(() => (copy.textContent = 'Copy link'), 1600);
     } catch {
       window.prompt('Copy this link:', link());
     }

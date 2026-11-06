@@ -435,6 +435,8 @@ input[type="range"] {
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
+    /* fades at the right edge so it's clear more tabs scroll in */
+    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
   }
 
   .nav button {
@@ -558,4 +560,119 @@ input[type="range"] {
 
 .button[hidden] {
   display: none;
+}
+
+/* ---------- live status (top bar) ---------- */
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  color: var(--soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status.live {
+  color: var(--text);
+}
+
+.status.live::before {
+  background: var(--live);
+  box-shadow: 0 0 6px var(--live);
+}
+
+.status[hidden] {
+  display: none;
+}
+
+/* ---------- look pictures (style picker) ---------- */
+.look {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  background: #050506;
+  border: 1px solid var(--line);
+}
+
+.mini-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 112px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1.5px solid #d4d4d8;
+  background: #161618;
+}
+
+.mini-card i {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #52525b;
+}
+
+.mini-card > span {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.mini-card b {
+  height: 3px;
+  border-radius: 2px;
+  background: #71717a;
+}
+
+.mini-card b + b {
+  width: 60%;
+  background: #3f3f46;
+}
+
+.mini-card em {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--text);
+}
+
+.mini-hud {
+  display: flex;
+  height: 26px;
+}
+
+.mini-hud img {
+  height: 100%;
+  width: auto;
+  margin-left: -2px;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.55;
+}
+
+.styles button[aria-checked="true"] .mini-hud img {
+  opacity: 1;
 }
