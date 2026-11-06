@@ -27,7 +27,7 @@
     player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', flag: false },
     plus: {
       rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15,
-      card: true, hudDigits: false, look: 'card',
+      card: true, hudDigits: false, look: 'card', divisionBacking: false,
     },
   };
   const DEFAULTS = { ...structuredClone(PAGE_DEFAULTS), ...structuredClone(PLUS_DEFAULTS) };
@@ -99,6 +99,7 @@
     }
     const p = settings.plus;
     if (slimLook()) params.set('look', 'slim');
+    if (slimLook() && mmr() && settings.plus.divisionBacking) params.set('db', 'on');
     if (hudLook() || !p.card) params.set('card', 'off');
     if (hudLook() || p.hudDigits) params.set('digits', 'hud');
     if (hudLook()) {
@@ -328,6 +329,7 @@
     row('Track', null, toggle('visibility.track'), cardVr),
     row('Session VR', null, toggle('visibility.sessionDelta'), badgeOnly),
     row('24 hour VR', null, toggle('visibility.dailyDelta'), cardVr),
+    row('Division backing', 'Black box behind the division name', toggle('plus.divisionBacking'), () => slimLook() && mmr()),
     row('Rank badge', null, toggle('plus.rankBadge')),
     row('Rank badge outline', null, toggle('plus.rankOutline'), badge),
     row('Outline strength', null, slider('plus.rankOutlineWidth', 1, 10, 1, ''), outlined),

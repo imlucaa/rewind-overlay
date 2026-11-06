@@ -207,9 +207,11 @@
       const label = document.createElement('style');
       document.head.appendChild(label);
       let said = '';
+      // db=on: a small black box behind the division so it reads on any picture.
+      const backing = q.get('db') === 'on' ? ';background:#000c;padding:2px 6px;border-radius:4px' : '';
       setInterval(() => {
         const { division, color } = lounge.info || {};
-        const text = division ? `.vr-label{font-size:0!important}.vr-label::after{content:${JSON.stringify(division.toUpperCase())};font-size:9px;color:${color || 'inherit'}}` : '';
+        const text = division ? `.vr-label{font-size:0!important}.vr-label::after{content:${JSON.stringify(division.toUpperCase())};font-size:9px;color:${color || 'inherit'}${backing}}` : '';
         if (text !== said) label.textContent = said = text;
       }, 1000);
     }
@@ -253,7 +255,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=19';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=26';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
