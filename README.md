@@ -12,8 +12,6 @@ Settings are kept in your browser and carried in the link.
 
 ## Credits
 
-- The overlay is [MichaelAccount1](https://github.com/MichaelAccount1)'s Rewind Overlay (MIT, see
-  `overlay/LICENSE-rewind-overlay.txt`), with additions from [Wheel Wizard+](https://github.com/imlucaa/WheelWizardPlus).
 - VR from [rwfc.net](https://rwfc.net), MMR, countries and divisions from [rr-lounge.com](https://rr-lounge.com).
   A GitHub Action refreshes `data/` every 30 minutes.
 - Mario Kart Wii font art belongs to Nintendo; the VR rank badges to Retro Rewind.

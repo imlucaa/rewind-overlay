@@ -153,6 +153,18 @@
       lounge.shown = p.mmr;
       return json({ pid: 'rr-lounge', name: p.name, friendCode, vr: p.mmr, rank: p.rank, isSuspicious: false });
     };
+    // Card: the page only knows a change from VR history, which the Lounge doesn't have. Once the new MMR is on screen
+    // the change is handed to the page, so its +/- pill shows like for VR.
+    if (q.get('vrhud') !== '1')
+      setInterval(() => {
+        const ctl = (window.__wwOverlays || []).find(c => c.engine?.player?.source === 'rwfc' && c.listeners.size);
+        if (!ctl || !mmrChange || mmrChange.card || carding) return;
+        const shown = ctl.engine.player;
+        if (shown.vr !== mmrChange.from + mmrChange.delta) return;
+        mmrChange.card = true;
+        ctl.engine.player = { ...shown, previousVr: mmrChange.from, vrDelta: mmrChange.delta };
+        ctl.emitChange();
+      }, 250);
     // The country flag before the name.
     if (q.get('flag') === 'on')
       loungePlayer().then(() => {
@@ -200,7 +212,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=13';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=14';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
