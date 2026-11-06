@@ -41,6 +41,8 @@
       '.rank-chip,.connection,.context-line>span{background:none!important;border:0!important;box-shadow:none!important}',
       '.connection>i{display:none!important}',
     );
+  // The page's "PREVIEW MODE" pill never shows (not in the preview, not in OBS).
+  css.push('.preview-mode-pill{display:none!important}');
   const style = document.createElement('style');
   style.textContent = css.join('');
   document.head.appendChild(style);
@@ -212,7 +214,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=16';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=17';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
