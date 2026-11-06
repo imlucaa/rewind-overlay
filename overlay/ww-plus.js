@@ -3,13 +3,17 @@
 // before it and adds, from the link's settings:
 //   colours (colors=vr-gain-loss-rank), no card (card=off), race HUD digits (digits=hud), the race HUD font for the
 //   name and the rest (text=hud), the race HUD VR change (vrhud=1), the rank badge (rank=on, bs, bg, ro, rw),
-//   and the RR Lounge MMR in place of the VR (src=mmr, ln=<lounge name>, ladder=rr|ct|tt, flag=on).
+//   and the RR Lounge MMR (src=mmr, ladder=rr|ct|tt) or MKW Lounge LR (src=mkw, ladder=rt|ct) in place of the VR (ln=<lounge name>, flag=on).
 (() => {
   const q = new URLSearchParams(location.search);
   const base = new URL('.', document.currentScript.src).href;
   const hex = value => (/^[0-9a-fA-F]{6}$/.test(value || '') ? '#' + value : null);
-  const mmr = q.get('src') === 'mmr';
-  const ladder = ['rr', 'ct', 'tt'].includes(q.get('ladder')) ? q.get('ladder') : 'rr';
+  // src=mkw: the MKW Lounge (mkwlounge.gg) LR, read the same way as the RR Lounge MMR (ladder=rt|ct).
+  const mkw = q.get('src') === 'mkw';
+  const mmr = q.get('src') === 'mmr' || mkw;
+  const ladder = mkw
+    ? (['rt', 'ct'].includes(q.get('ladder')) ? q.get('ladder') : 'rt')
+    : ['rr', 'ct', 'tt'].includes(q.get('ladder')) ? q.get('ladder') : 'rr';
   const loungeName = (q.get('ln') || '').trim();
   const realFetch = window.fetch.bind(window);
 
@@ -79,6 +83,8 @@
   // vl=off: no "VR"/"MMR" label (or division) under the number. cb=off: the change keeps its colour but loses its box.
   if (q.get('vl') === 'off') css.push('.element-vr-label{display:none!important}');
   if (q.get('cb') === 'off') css.push('.delta{background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-left:0!important;padding-right:0!important}');
+  // MKW Lounge: the label under the number says LR.
+  if (mkw) css.push('.vr-label{font-size:0!important}.vr-label::after{content:"LR";font-size:10px}');
   // The page's "PREVIEW MODE" pill never shows (not in the preview, not in OBS).
   css.push('.preview-mode-pill{display:none!important}');
   // The page opens on a made-up sample player (87,747). It stays hidden until the real number is in (or 6 s pass),
@@ -164,7 +170,36 @@
     return lounge.pending;
   }
 
+  // MKW Lounge divisions (by LR) and their colours; the emblems are in overlay/mkw/.
+  const mkwColours = {
+    iron: '#9a9a9a', copper: '#e07a4f', bronze: '#e89a3c', silver: '#d4dbe3', gold: '#f5c518', platinum: '#41d3d9',
+    emerald: '#3fcf5c', ruby: '#ec3355', diamond: '#8fe6ff', master: '#a99bc4', grandmaster: '#ef2c45',
+  };
+
+  async function readMkw() {
+    try {
+      const url = `https://www.mkwlounge.gg/api/ladderplayer.php?ladder_type=${ladder}&player_name=${encodeURIComponent(loungeName)}`;
+      // The answer starts with blank lines, so it is read as text first.
+      const found = JSON.parse((await (await realFetch(url, { cache: 'no-store' })).text()).trim()).results?.[0];
+      if (found) {
+        const division = String(found.current_division || '');
+        const key = division.toLowerCase();
+        lounge.player = { name: found.player_name, mmr: found.current_lr, rank: parseInt(found.ranking, 10) || 0 };
+        lounge.info = {
+          country: found.player_country_flag || null,
+          icon: mkwColours[key] ? base + 'mkw/' + key + '.png' : null,
+          division: division || null,
+          color: mkwColours[key] || null,
+        };
+      }
+    } catch (e) {
+      // Offline: the last numbers stay.
+    }
+    return lounge.player;
+  }
+
   async function readLounge() {
+    if (mkw) return readMkw();
     try {
       const board = await (await realFetch(`https://rr-lounge.com/api/leaderboard?category=${ladder}`, { cache: 'no-store' })).json();
       const found = (board.players || []).find(p => p.name.toLowerCase() === loungeName.toLowerCase());
@@ -280,7 +315,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=29';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=31';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
@@ -386,7 +421,8 @@
       : 'none';
   const specialty = ['tester', 'donor', 'translator', 'discord-staff', 'contributor', 'major-contributor', 'wfc-staff', 'developer'];
   const ranks = [[100000, 'crown'], [94000, '3star'], [84000, '2star'], [72000, 'star'], [60000, 'a'], [48000, 'b'], [36000, 'c'], [24000, 'd'], [0, 'e']];
-  const pickedBadge = [...ranks.map(t => t[1]), ...specialty].includes(q.get('badge')) ? q.get('badge') : null;
+  const mkwBadges = ['iron', 'copper', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'ruby', 'diamond', 'master', 'grandmaster'].map(d => 'mkw-' + d);
+  const pickedBadge = [...ranks.map(t => t[1]), ...specialty, ...mkwBadges].includes(q.get('badge')) ? q.get('badge') : null;
   const tint = { name: hex(q.get('tc')) || '#ffffff', gain, loss, rank: rankTint, muted: hex(q.get('mc')) || '#c9d1e7' };
   const fileFor = c => (c === '-' ? 'dash' : c === '+' ? 'plus' : c);
   const clean = t =>
@@ -508,7 +544,9 @@
             const value = parseInt(i.text, 10) || 0;
             // badge=<name>: always that badge (a rank one, or a specialty one like donor); otherwise it follows the number.
             const src = pickedBadge
-              ? base + (ranks.some(t => t[1] === pickedBadge) ? 'ranks/' : 'badges/') + pickedBadge + '.webp'
+              ? pickedBadge.startsWith('mkw-')
+                ? base + 'mkw/' + pickedBadge.slice(4) + '.png'
+                : base + (ranks.some(t => t[1] === pickedBadge) ? 'ranks/' : 'badges/') + pickedBadge + '.webp'
               : mmr ? lounge.info?.icon : base + 'ranks/' + ranks.find(t => value >= t[0])[1] + '.webp';
             if (src) {
               const badge = document.createElement('img');

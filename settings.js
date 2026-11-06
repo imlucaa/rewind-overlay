@@ -25,7 +25,7 @@
   const PLUS_DEFAULTS = {
     preview: { gain: 41 },
     font: { text: '', number: '', customText: '', customNumber: '' },
-    player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', flag: false },
+    player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', mkwLadder: 'rt', flag: false },
     plus: {
       rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
       card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true,
@@ -48,8 +48,10 @@
     changed();
   };
 
-  const mmr = () => settings.player.source === 'mmr';
-  const unit = text => (mmr() ? text.replace(/\bVR\b/g, 'MMR') : text);
+  // mmr(): one of the Lounges (RR Lounge MMR, or MKW Lounge LR) instead of the VR.
+  const mkw = () => settings.player.source === 'mkw';
+  const mmr = () => settings.player.source === 'mmr' || mkw();
+  const unit = text => (mkw() ? text.replace(/\bVR\b/g, 'LR') : mmr() ? text.replace(/\bVR\b/g, 'MMR') : text);
   // The race HUD look comes with the "race hud" VR change: no card, race HUD digits and font.
   const hudLook = () => settings.animations.vr === 'race hud';
   const slimLook = () => !hudLook() && settings.plus.look === 'slim';
@@ -93,9 +95,9 @@
     if (!mmr() && settings.player.pollSeconds !== 5) params.set('poll', settings.player.pollSeconds);
     if (Object.keys(patch).length) params.set('cfg', base64url(JSON.stringify(patch)));
     if (mmr()) {
-      params.set('src', 'mmr');
+      params.set('src', settings.player.source);
       params.set('ln', settings.player.loungeName);
-      params.set('ladder', settings.player.ladder);
+      params.set('ladder', mkw() ? settings.player.mkwLadder : settings.player.ladder);
       if (settings.player.flag && !hudLook()) params.set('flag', 'on');
     }
     const p = settings.plus;
@@ -332,11 +334,13 @@
 
   section('Player', [
     style(),
-    row('Show', null, choice('player.source', [['vr', 'VR'], ['mmr', 'MMR']])),
+    row('Show', null, choice('player.source', [['vr', 'VR'], ['mmr', 'MMR · RR Lounge'], ['mkw', 'LR · MKW Lounge']])),
     row('Friend code', null, text('player.friendCode', '0000-0000-0000'), vrOnly),
     row('Update every', null, slider('player.pollSeconds', 3, 60, 1, ' s'), vrOnly),
-    row('RR Lounge name', null, text('player.loungeName', 'Your RR Lounge name'), mmrOnly),
-    row('Leaderboard', null, choice('player.ladder', [['rr', 'Retro Rewind'], ['ct', 'Custom Tracks'], ['tt', 'Time Trial']]), mmrOnly),
+    row('RR Lounge name', null, text('player.loungeName', 'Your RR Lounge name'), () => mmr() && !mkw()),
+    row('Leaderboard', null, choice('player.ladder', [['rr', 'Retro Rewind'], ['ct', 'Custom Tracks'], ['tt', 'Time Trial']]), () => mmr() && !mkw()),
+    row('MKW Lounge name', null, text('player.loungeName', 'Your mkwlounge.gg name'), mkw),
+    row('Leaderboard', null, choice('player.mkwLadder', [['rt', 'Regular Tracks'], ['ct', 'Custom Tracks']]), mkw),
     row('Tag', null, text('player.tag', ''), badgeOnly),
   ]);
 
@@ -364,6 +368,9 @@
       ['tester', 'Beta tester'], ['donor', 'Donor / supporter'], ['translator', 'Translator'], ['discord-staff', 'Discord staff'],
       ['contributor', 'Pack contributor'], ['major-contributor', 'Major pack contributor'], ['wfc-staff', 'Retro WFC staff'],
       ['developer', 'Retro Rewind developer'],
+      ['mkw-iron', 'MKW Iron'], ['mkw-copper', 'MKW Copper'], ['mkw-bronze', 'MKW Bronze'], ['mkw-silver', 'MKW Silver'],
+      ['mkw-gold', 'MKW Gold'], ['mkw-platinum', 'MKW Platinum'], ['mkw-emerald', 'MKW Emerald'], ['mkw-ruby', 'MKW Ruby'],
+      ['mkw-diamond', 'MKW Diamond'], ['mkw-master', 'MKW Master'], ['mkw-grandmaster', 'MKW Grandmaster'],
     ])),
     row('Badge outline', null, toggle('plus.rankOutline'), badge),
     row('Outline strength', null, slider('plus.rankOutlineWidth', 1, 10, 1, ''), outlined),
@@ -464,7 +471,7 @@
     preview.style.transform = `scale(${scale})`;
   }).observe(preview.parentElement);
 
-  const missing = () => (mmr() ? 'Enter your RR Lounge name' : 'Enter your friend code');
+  const missing = () => (mkw() ? 'Enter your MKW Lounge name' : mmr() ? 'Enter your RR Lounge name' : 'Enter your friend code');
 
 
   function changed() {
