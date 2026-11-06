@@ -27,7 +27,7 @@
     font: { text: '', number: '', customText: '', customNumber: '' },
     player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', mkwLadder: 'rt', flag: false },
     plus: {
-      rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
+      rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 2, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
       card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true,
     },
   };
@@ -334,7 +334,7 @@
 
   section('Player', [
     style(),
-    row('Show', null, choice('player.source', [['vr', 'VR'], ['mmr', 'MMR · RR Lounge'], ['mkw', 'LR · MKW Lounge']])),
+    row('Show', null, choice('player.source', [['vr', 'VR · RWFC'], ['mmr', 'MMR · RR Lounge'], ['mkw', 'LR · MKW Lounge']])),
     row('Friend code', null, text('player.friendCode', '0000-0000-0000'), vrOnly),
     row('Update every', null, slider('player.pollSeconds', 3, 60, 1, ' s'), vrOnly),
     row('RR Lounge name', null, text('player.loungeName', 'Your RR Lounge name'), () => mmr() && !mkw()),
@@ -373,7 +373,7 @@
       ['mkw-diamond', 'MKW Diamond'], ['mkw-master', 'MKW Master'], ['mkw-grandmaster', 'MKW Grandmaster'],
     ])),
     row('Badge outline', null, toggle('plus.rankOutline'), badge),
-    row('Outline strength', null, slider('plus.rankOutlineWidth', 1, 10, 1, ''), outlined),
+    row('Outline strength', null, slider('plus.rankOutlineWidth', 0.5, 10, 0.5, ''), outlined),
     row('Badge size', null, slider('plus.rankBadgeSize', 30, 300, 5, ' %'), badge),
     row('Badge spacing', null, slider('plus.rankBadgeGap', 0, 100, 1, ' %'), badge),
   ]);

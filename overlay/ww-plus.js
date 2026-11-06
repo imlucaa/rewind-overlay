@@ -315,7 +315,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=31';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=32';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
@@ -412,7 +412,7 @@
   const badgeSize = Math.min(300, Math.max(30, parseFloat(q.get('bs')) || 100)) / 100;
   const badgeGap = Math.min(100, Math.max(0, parseFloat(q.get('bg') ?? '15'))) / 100;
   const ro = hex(q.get('ro'));
-  const rw = Math.min(10, Math.max(1, parseFloat(q.get('rw')) || 3));
+  const rw = Math.min(10, Math.max(0.5, parseFloat(q.get('rw')) || 2));
   const outline = h =>
     ro
       ? [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]]
@@ -551,7 +551,7 @@
             if (src) {
               const badge = document.createElement('img');
               badge.src = src;
-              badge.style.cssText = `height:${h * 0.9 * badgeSize}px;width:auto;margin-right:${fontHere ? h * badgeGap : 0}px;filter:${outline(Math.max(1, h * 0.015 * rw))}`;
+              badge.style.cssText = `height:${h * 0.9 * badgeSize}px;width:auto;margin-right:${fontHere ? h * badgeGap : 0}px;filter:${outline(Math.max(0.5, h * 0.006 * rw))}`;
               box.appendChild(badge);
             }
           }
