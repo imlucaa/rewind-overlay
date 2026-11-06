@@ -299,7 +299,7 @@
     row('Friend code', null, text('player.friendCode', '0000-0000-0000'), vrOnly),
     row('Update every', null, slider('player.pollSeconds', 3, 60, 1, ' s'), vrOnly),
     row('RR Lounge name', null, text('player.loungeName', 'Your RR Lounge name'), mmrOnly),
-    row('Ladder', null, choice('player.ladder', [['rr', 'Retro Rewind'], ['ct', 'Custom Tracks'], ['tt', 'Time Trial']]), mmrOnly),
+    row('Leaderboard', null, choice('player.ladder', [['rr', 'Retro Rewind'], ['ct', 'Custom Tracks'], ['tt', 'Time Trial']]), mmrOnly),
     row('Country flag', null, toggle('player.flag'), () => mmr() && !hudLook()),
     row('Tag', null, text('player.tag', ''), badgeOnly),
   ]);
