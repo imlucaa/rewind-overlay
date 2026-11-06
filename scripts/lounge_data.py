@@ -16,7 +16,7 @@ OUT = pathlib.Path(__file__).resolve().parent.parent / "data"
 def page(ladder: str) -> str:
     request = urllib.request.Request(
         f"https://rr-lounge.com/leaderboard?category={ladder}",
-        headers={"User-Agent": "rewind-overlay-plus data job"},
+        headers={"User-Agent": "rewind-overlay data job"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return response.read().decode("utf-8")

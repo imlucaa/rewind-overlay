@@ -2,7 +2,7 @@
 
 A Retro Rewind VR and RR Lounge MMR overlay for OBS that runs in the browser. Nothing to download.
 
-**Open it:** https://imlucaa.github.io/rewind-overlay-plus/
+**Open it:** https://imlucaa.github.io/rewind-overlay/
 
 1. Pick **Card** or **Race HUD**, then **VR** (friend code) or **MMR** (RR Lounge name).
 2. Change the look; the preview updates as you go.
