@@ -41,6 +41,19 @@
       '.rank-chip,.connection,.context-line>span{background:none!important;border:0!important;box-shadow:none!important}',
       '.connection>i{display:none!important}',
     );
+  // Slim (look=slim): a thin pill, plain big number, the name small; the flag sits above the name and, for MMR, the
+  // division takes the place of the "MMR" label.
+  const slim = q.get('look') === 'slim';
+  if (slim)
+    css.push(
+      '.card-content{padding:8px 30px!important;gap:16px!important}',
+      '.player-name{font-size:18px!important;letter-spacing:0!important;opacity:.85}',
+      `.vr-value{font-family:inherit!important;font-size:46px!important;font-weight:600!important;letter-spacing:-.01em!important;color:${hex(q.get('tc')) || '#ffffff'}!important;text-shadow:0 2px 10px #000c!important}`,
+      '.meta-line{margin-top:-2px!important;min-height:0!important;justify-content:center!important;gap:6px!important}',
+      '.vr-label{font-size:9px!important;letter-spacing:.22em!important}',
+      // the glass blur leaks past the round ends in Chrome
+      '.background-shade{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}',
+    );
   // The page's "PREVIEW MODE" pill never shows (not in the preview, not in OBS).
   css.push('.preview-mode-pill{display:none!important}');
   // The page opens on a made-up sample player (87,747). It stays hidden until the real number is in (or 6 s pass),
@@ -139,6 +152,7 @@
           country: data?.countries?.[found.id] || null,
           icon: tier?.icon ? 'https://rr-lounge.com' + tier.icon : null,
           division: tier?.name || null,
+          color: tier?.color || null,
         };
       }
     } catch (e) {
@@ -184,8 +198,21 @@
       loungePlayer().then(() => {
         const country = lounge.info?.country;
         if (country && /^[a-z]{2}$/i.test(country))
-          style.textContent += `.player-name{padding-left:1.55em;background:url(https://flagcdn.com/w80/${country.toLowerCase()}.png) left center/1.3em .95em no-repeat}`;
+          style.textContent += slim
+            ? `.player-name{padding-top:1.05em;background:url(https://flagcdn.com/w80/${country.toLowerCase()}.png) left top/1.2em .85em no-repeat}`
+            : `.player-name{padding-left:1.55em;background:url(https://flagcdn.com/w80/${country.toLowerCase()}.png) left center/1.3em .95em no-repeat}`;
       });
+    // Slim: the division (BRONZE, SILVER, ...) in its own colour under the number.
+    if (slim) {
+      const label = document.createElement('style');
+      document.head.appendChild(label);
+      let said = '';
+      setInterval(() => {
+        const { division, color } = lounge.info || {};
+        const text = division ? `.vr-label{font-size:0!important}.vr-label::after{content:${JSON.stringify(division.toUpperCase())};font-size:9px;color:${color || 'inherit'}}` : '';
+        if (text !== said) label.textContent = said = text;
+      }, 1000);
+    }
   }
 
   // ---------- no card: centre what is drawn ----------

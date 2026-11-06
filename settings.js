@@ -27,7 +27,7 @@
     player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', flag: false },
     plus: {
       rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15,
-      card: true, hudDigits: false,
+      card: true, hudDigits: false, look: 'card',
     },
   };
   const DEFAULTS = { ...structuredClone(PAGE_DEFAULTS), ...structuredClone(PLUS_DEFAULTS) };
@@ -51,6 +51,7 @@
   const unit = text => (mmr() ? text.replace(/\bVR\b/g, 'MMR') : text);
   // The race HUD look comes with the "race hud" VR change: no card, race HUD digits and font.
   const hudLook = () => settings.animations.vr === 'race hud';
+  const slimLook = () => !hudLook() && settings.plus.look === 'slim';
 
   // ---------- the link ----------
   function diff(defaults, current) {
@@ -97,6 +98,7 @@
       if (settings.player.flag && !hudLook()) params.set('flag', 'on');
     }
     const p = settings.plus;
+    if (slimLook()) params.set('look', 'slim');
     if (hudLook() || !p.card) params.set('card', 'off');
     if (hudLook() || p.hudDigits) params.set('digits', 'hud');
     if (hudLook()) {
@@ -239,26 +241,36 @@
     // A small drawing of each look: a mini card, or the number in the game's own digits.
     const card = '<span class="mini-card"><i></i><span><b></b><b></b></span><em>9,044</em></span>';
     const hud = '<span class="mini-hud">' + [...'9044'].map(d => `<img src="overlay/font/${d}.png" alt="">`).join('') + '</span>';
+    const slim = '<span class="mini-slim"><span><i></i><b></b></span><em>3945</em></span>';
     const pick = (value, title, sub) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.setAttribute('role', 'radio');
-      b.innerHTML = `<span class="look">${value === 'hud' ? hud : card}</span><strong></strong><small></small>`;
+      b.innerHTML = `<span class="look">${value === 'hud' ? hud : value === 'slim' ? slim : card}</span><strong></strong><small></small>`;
       b.querySelector('strong').textContent = title;
       b.querySelector('small').textContent = sub;
       b.addEventListener('click', () => {
-        // Card means the card: the card, its font and the Mii and name come back on.
+        // Card and Slim each start from their own look; the options can change it after.
         if (value === 'card') {
-          Object.assign(settings.plus, { card: true, hudDigits: false });
-          Object.assign(settings.visibility, { avatar: true, name: true });
+          Object.assign(settings.plus, { card: true, hudDigits: false, look: 'card' });
+          Object.assign(settings.visibility, { avatar: true, name: true, rank: true });
+          settings.border = structuredClone(PAGE_DEFAULTS.border);
+          settings.layout = structuredClone(PAGE_DEFAULTS.layout);
+        }
+        if (value === 'slim') {
+          Object.assign(settings.plus, { card: true, hudDigits: false, look: 'slim' });
+          Object.assign(settings.visibility, { avatar: false, name: true, rank: false, delta: true });
+          Object.assign(settings.border, { effect: 'solid', width: 3, radius: 60, glow: false, color1: '#e8a6b8' });
+          Object.assign(settings.layout, { compact: true, width: 470 });
+          Object.assign(settings.background, { overlayOpacity: 0.3, brightness: 0.75, blur: 0 });
         }
         set('animations.vr', value === 'hud' ? 'race hud' : 'count');
         for (const sync of syncs) sync();
       });
-      syncs.push(() => b.setAttribute('aria-checked', String((value === 'hud') === hudLook())));
+      syncs.push(() => b.setAttribute('aria-checked', String(value === (hudLook() ? 'hud' : slimLook() ? 'slim' : 'card'))));
       return b;
     };
-    wrap.append(pick('card', 'Card', 'Border, background, Mii'), pick('hud', 'Race HUD', 'Game font, no card'));
+    wrap.append(pick('card', 'Card', 'Border, background, Mii'), pick('slim', 'Slim', 'Thin pill, flag, division'), pick('hud', 'Race HUD', 'Game font, no card'));
     rows.push({ el: wrap });
     return wrap;
   }
