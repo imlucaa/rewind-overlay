@@ -300,6 +300,19 @@
     return select;
   }
 
+  // The badge: Off, or which one (Automatic follows the number).
+  function badgePicker(values) {
+    const select = document.createElement('select');
+    for (const [v, label] of values) select.append(new Option(label, v));
+    syncs.push(() => (select.value = settings.plus.rankBadge ? settings.plus.rankBadgeKind : 'off'));
+    select.addEventListener('change', () => {
+      settings.plus.rankBadgeKind = select.value === 'off' ? settings.plus.rankBadgeKind : select.value;
+      set('plus.rankBadge', select.value !== 'off');
+      for (const sync of syncs) sync();
+    });
+    return select;
+  }
+
   function text(path, placeholder) {
     const input = document.createElement('input');
     input.type = 'text';
@@ -344,19 +357,18 @@
     row('Session VR', null, toggle('visibility.sessionDelta'), badgeOnly),
     row('24 hour VR', null, toggle('visibility.dailyDelta'), cardVr),
     row('Division backing', 'Black box behind the division name', toggle('plus.divisionBacking'), () => slimLook() && mmr()),
-    row('Rank badge', null, toggle('plus.rankBadge')),
-    row('Badge', null, choice('plus.rankBadgeKind', [
-      ['', 'Automatic'],
+    row('Badge', null, badgePicker([
+      ['off', 'Off'], ['', 'Automatic'],
       ['e', 'E rank (0–24k)'], ['d', 'D rank (24–36k)'], ['c', 'C rank (36–48k)'], ['b', 'B rank (48–60k)'], ['a', 'A rank (60–72k)'],
       ['star', 'Star (72–84k)'], ['2star', 'Two stars (84–94k)'], ['3star', 'Three stars (94–100k)'], ['crown', 'Crown (100k+)'],
       ['tester', 'Beta tester'], ['donor', 'Donor / supporter'], ['translator', 'Translator'], ['discord-staff', 'Discord staff'],
       ['contributor', 'Pack contributor'], ['major-contributor', 'Major pack contributor'], ['wfc-staff', 'Retro WFC staff'],
       ['developer', 'Retro Rewind developer'],
-    ]), badge),
-    row('Rank badge outline', null, toggle('plus.rankOutline'), badge),
+    ])),
+    row('Badge outline', null, toggle('plus.rankOutline'), badge),
     row('Outline strength', null, slider('plus.rankOutlineWidth', 1, 10, 1, ''), outlined),
-    row('Rank badge size', null, slider('plus.rankBadgeSize', 30, 300, 5, ' %'), badge),
-    row('Rank badge spacing', null, slider('plus.rankBadgeGap', 0, 100, 1, ' %'), badge),
+    row('Badge size', null, slider('plus.rankBadgeSize', 30, 300, 5, ' %'), badge),
+    row('Badge spacing', null, slider('plus.rankBadgeGap', 0, 100, 1, ' %'), badge),
   ]);
 
   section('Size', [
@@ -399,7 +411,7 @@
     row('Gains', null, color('typography.gainColor')),
     row('Losses', null, color('typography.lossColor')),
     row('Rank', null, color('typography.rankColor'), badgeOnly),
-    row('Rank badge outline', null, color('plus.rankOutlineColor'), outlined),
+    row('Badge outline', null, color('plus.rankOutlineColor'), outlined),
     row('Mii backing', null, choice('avatar.background', ['gradient', 'solid', 'transparent']), badgeOnly),
     row('Mii color 1', null, color('avatar.color1'), badgeOnly),
     row('Mii color 2', null, color('avatar.color2'), badgeOnly),
