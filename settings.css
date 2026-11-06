@@ -571,34 +571,14 @@ input[type="range"] {
 }
 
 .status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 22px;
-  padding: 0 9px;
-  border: 1px solid var(--line-strong);
-  border-radius: 99px;
   color: var(--soft);
-  font-size: 12px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.status::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
 .status.live {
-  color: var(--text);
-}
-
-.status.live::before {
-  background: var(--live);
-  box-shadow: 0 0 6px var(--live);
+  color: var(--muted);
 }
 
 .status[hidden] {
