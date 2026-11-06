@@ -299,13 +299,13 @@
     row('Update every', null, slider('player.pollSeconds', 3, 60, 1, ' s'), vrOnly),
     row('RR Lounge name', null, text('player.loungeName', 'Your RR Lounge name'), mmrOnly),
     row('Leaderboard', null, choice('player.ladder', [['rr', 'Retro Rewind'], ['ct', 'Custom Tracks'], ['tt', 'Time Trial']]), mmrOnly),
-    row('Country flag', null, toggle('player.flag'), () => mmr() && !hudLook()),
     row('Tag', null, text('player.tag', ''), badgeOnly),
   ]);
 
   section('Show', [
     row('Mii picture', null, toggle('visibility.avatar'), badgeOnly),
     row('Name', null, toggle('visibility.name'), badgeOnly),
+    row('Country flag', null, toggle('player.flag'), () => mmr() && !hudLook()),
     row('Tag', null, toggle('visibility.tag'), badgeOnly),
     row('VR', null, toggle('visibility.vr')),
     row('VR change', null, toggle('visibility.delta'), badgeOnly),
