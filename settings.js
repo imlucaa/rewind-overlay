@@ -27,7 +27,7 @@
     font: { text: '', number: '', customText: '', customNumber: '' },
     player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', flag: false },
     plus: {
-      rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15,
+      rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
       card: true, hudDigits: false, look: 'card', divisionBacking: false,
     },
   };
@@ -117,6 +117,7 @@
     }
     if (p.rankBadge) {
       params.set('rank', 'on');
+      if (p.rankBadgeKind) params.set('badge', p.rankBadgeKind);
       params.set('bs', p.rankBadgeSize);
       params.set('bg', p.rankBadgeGap);
       if (p.rankOutline) {
@@ -340,6 +341,14 @@
     row('24 hour VR', null, toggle('visibility.dailyDelta'), cardVr),
     row('Division backing', 'Black box behind the division name', toggle('plus.divisionBacking'), () => slimLook() && mmr()),
     row('Rank badge', null, toggle('plus.rankBadge')),
+    row('Badge', null, choice('plus.rankBadgeKind', [
+      ['', 'Automatic'],
+      ['e', 'E rank (0–24k)'], ['d', 'D rank (24–36k)'], ['c', 'C rank (36–48k)'], ['b', 'B rank (48–60k)'], ['a', 'A rank (60–72k)'],
+      ['star', 'Star (72–84k)'], ['2star', 'Two stars (84–94k)'], ['3star', 'Three stars (94–100k)'], ['crown', 'Crown (100k+)'],
+      ['tester', 'Beta tester'], ['donor', 'Donor / supporter'], ['translator', 'Translator'], ['discord-staff', 'Discord staff'],
+      ['contributor', 'Pack contributor'], ['major-contributor', 'Major pack contributor'], ['wfc-staff', 'Retro WFC staff'],
+      ['developer', 'Retro Rewind developer'],
+    ]), badge),
     row('Rank badge outline', null, toggle('plus.rankOutline'), badge),
     row('Outline strength', null, slider('plus.rankOutlineWidth', 1, 10, 1, ''), outlined),
     row('Rank badge size', null, slider('plus.rankBadgeSize', 30, 300, 5, ' %'), badge),

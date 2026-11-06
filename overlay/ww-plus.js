@@ -277,7 +277,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=27';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=28';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
@@ -381,7 +381,9 @@
           .map(([x, y]) => `drop-shadow(${x * h}px ${y * h}px 0 ${ro})`)
           .join(' ')
       : 'none';
+  const specialty = ['tester', 'donor', 'translator', 'discord-staff', 'contributor', 'major-contributor', 'wfc-staff', 'developer'];
   const ranks = [[100000, 'crown'], [94000, '3star'], [84000, '2star'], [72000, 'star'], [60000, 'a'], [48000, 'b'], [36000, 'c'], [24000, 'd'], [0, 'e']];
+  const pickedBadge = [...ranks.map(t => t[1]), ...specialty].includes(q.get('badge')) ? q.get('badge') : null;
   const tint = { name: hex(q.get('tc')) || '#ffffff', gain, loss, rank: rankTint, muted: hex(q.get('mc')) || '#c9d1e7' };
   const fileFor = c => (c === '-' ? 'dash' : c === '+' ? 'plus' : c);
   const clean = t =>
@@ -501,7 +503,10 @@
           box.style.cssText = `position:fixed;top:${top}px;${side};height:${h}px;display:flex;align-items:center`;
           if (rank && i.kind === 'vr') {
             const value = parseInt(i.text, 10) || 0;
-            const src = mmr ? lounge.info?.icon : base + 'ranks/' + ranks.find(t => value >= t[0])[1] + '.webp';
+            // badge=<name>: always that badge (a rank one, or a specialty one like donor); otherwise it follows the number.
+            const src = pickedBadge
+              ? base + (ranks.some(t => t[1] === pickedBadge) ? 'ranks/' : 'badges/') + pickedBadge + '.webp'
+              : mmr ? lounge.info?.icon : base + 'ranks/' + ranks.find(t => value >= t[0])[1] + '.webp';
             if (src) {
               const badge = document.createElement('img');
               badge.src = src;
