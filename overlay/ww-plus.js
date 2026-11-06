@@ -43,6 +43,18 @@
     );
   // The page's "PREVIEW MODE" pill never shows (not in the preview, not in OBS).
   css.push('.preview-mode-pill{display:none!important}');
+  // The page opens on a made-up sample player (87,747). It stays hidden until the real number is in (or 6 s pass),
+  // and the bundles skip counting from the sample, so switching shows the real number straight away.
+  css.push('html.ww-wait #root,html.ww-wait #ww-layer{visibility:hidden!important}');
+  document.documentElement.classList.add('ww-wait');
+  const waitStart = performance.now();
+  const waitTimer = setInterval(() => {
+    const text = document.querySelector('.vr-value')?.textContent || '';
+    if ((text && text.replace(/\D/g, '') !== '87747') || performance.now() - waitStart > 6000) {
+      clearInterval(waitTimer);
+      document.documentElement.classList.remove('ww-wait');
+    }
+  }, 50);
   const style = document.createElement('style');
   style.textContent = css.join('');
   document.head.appendChild(style);
@@ -214,7 +226,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=17';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=19';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
