@@ -212,7 +212,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=14';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=15';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
@@ -329,6 +329,11 @@
       .replace(/([+-]) (?=[0-9])/g, '$1')
       .trim();
   const drawable = text => /^[0-9A-Z+\- ]+$/.test(text);
+  // The page's own text is hidden under the drawn letters. Its .positive/.negative colours are !important, so this is too.
+  const hide = el => {
+    for (const k of ['color', 'background', 'text-shadow', 'backdrop-filter', '-webkit-backdrop-filter'])
+      el.style.setProperty(k, k === 'color' ? 'transparent' : 'none', 'important');
+  };
   let lastDelta = null;
   let vrStart = 0;
 
@@ -350,7 +355,7 @@
       for (const el of document.querySelectorAll('.element-delta .delta')) {
         let text = (el.textContent || '').replace(/[^0-9+-]/g, '');
         if (raceCount) {
-          el.style.color = 'transparent';
+          hide(el);
           const delta = parseInt(text, 10) || 0;
           // The first change seen is an old one (already counted); a new one starts counting from here.
           if (lastDelta === null) vrStart = vrNow - delta;
@@ -416,7 +421,7 @@
         for (const i of items) {
           const h = i.size * (i.kind === 'side' ? 0.55 : 1.08);
           const fontHere = i.kind === 'vr' ? digits : true;
-          if (fontHere) i.el.style.color = 'transparent';
+          if (fontHere) hide(i.el);
           const box = document.createElement('div');
           // The name keeps its left edge; numbers keep their right edge. Without the digits the rank badge sits just
           // left of the page's own number.
