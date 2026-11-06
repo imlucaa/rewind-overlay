@@ -76,6 +76,9 @@
     if (numberFontName !== textFontName) loadFont(numberFontName);
     css.push(`.overlay-shell .vr-value,.overlay-shell .vr-value *{font-family:"${numberFontName}",system-ui,sans-serif!important}`);
   }
+  // vl=off: no "VR"/"MMR" label (or division) under the number. cb=off: the change keeps its colour but loses its box.
+  if (q.get('vl') === 'off') css.push('.element-vr-label{display:none!important}');
+  if (q.get('cb') === 'off') css.push('.delta{background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-left:0!important;padding-right:0!important}');
   // The page's "PREVIEW MODE" pill never shows (not in the preview, not in OBS).
   css.push('.preview-mode-pill{display:none!important}');
   // The page opens on a made-up sample player (87,747). It stays hidden until the real number is in (or 6 s pass),
@@ -277,7 +280,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=28';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=29';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------

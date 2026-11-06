@@ -28,7 +28,7 @@
     player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', flag: false },
     plus: {
       rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
-      card: true, hudDigits: false, look: 'card', divisionBacking: false,
+      card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true,
     },
   };
   const DEFAULTS = { ...structuredClone(PAGE_DEFAULTS), ...structuredClone(PLUS_DEFAULTS) };
@@ -107,6 +107,8 @@
       if (text) params.set('font', text);
       if (number) params.set('nfont', number);
     }
+    if (!hudLook() && !settings.plus.vrLabel) params.set('vl', 'off');
+    if (!hudLook() && !settings.plus.changeBox) params.set('cb', 'off');
     if (slimLook()) params.set('look', 'slim');
     if (slimLook() && mmr() && settings.plus.divisionBacking) params.set('db', 'on');
     if (hudLook() || !p.card) params.set('card', 'off');
@@ -332,6 +334,8 @@
     row('Tag', null, toggle('visibility.tag'), badgeOnly),
     row('VR', null, toggle('visibility.vr')),
     row('VR change', null, toggle('visibility.delta'), badgeOnly),
+    row('Change box', null, toggle('plus.changeBox'), () => badgeOnly() && settings.visibility.delta),
+    row('VR label', null, toggle('plus.vrLabel'), badgeOnly),
     row('Rank', null, toggle('visibility.rank')),
     row('Rank change', null, toggle('visibility.rankDelta'), cardVr),
     row('Connection', null, toggle('visibility.connection'), cardVr),
