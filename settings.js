@@ -24,6 +24,7 @@
   };
   const PLUS_DEFAULTS = {
     preview: { gain: 41 },
+    font: { text: '', number: '', customText: '', customNumber: '' },
     player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', flag: false },
     plus: {
       rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 3, rankBadgeSize: 100, rankBadgeGap: 15,
@@ -98,6 +99,14 @@
       if (settings.player.flag && !hudLook()) params.set('flag', 'on');
     }
     const p = settings.plus;
+    if (!hudLook()) {
+      const f = settings.font;
+      const pickFont = (value, custom) => (value === 'custom' ? custom.trim() : value);
+      const text = pickFont(f.text, f.customText);
+      const number = pickFont(f.number, f.customNumber);
+      if (text) params.set('font', text);
+      if (number) params.set('nfont', number);
+    }
     if (slimLook()) params.set('look', 'slim');
     if (slimLook() && mmr() && settings.plus.divisionBacking) params.set('db', 'on');
     if (hudLook() || !p.card) params.set('card', 'off');
@@ -342,6 +351,19 @@
     row('Compact', null, toggle('layout.compact'), badgeOnly),
     row('Card', null, toggle('plus.card'), badgeOnly),
     row('Text weight', null, slider('typography.weight', 400, 900, 100, '')),
+  ], badgeOnly);
+
+  const FONTS = [
+    ['', 'Default'], ['Inter', 'Inter'], ['Poppins', 'Poppins'], ['Montserrat', 'Montserrat'], ['Rubik', 'Rubik'],
+    ['Outfit', 'Outfit'], ['Oswald', 'Oswald'], ['Bebas Neue', 'Bebas Neue'], ['Anton', 'Anton'], ['Russo One', 'Russo One'],
+    ['Orbitron', 'Orbitron'], ['Audiowide', 'Audiowide'], ['Bungee', 'Bungee'], ['Press Start 2P', 'Press Start 2P'],
+    ['Fredoka', 'Fredoka'], ['Lilita One', 'Lilita One'], ['custom', 'Other (Google Fonts)…'],
+  ];
+  section('Font', [
+    row('Text font', 'Name and labels', choice('font.text', FONTS)),
+    row('Font name', 'Any font on fonts.google.com', text('font.customText', 'e.g. Exo 2'), () => settings.font.text === 'custom'),
+    row('Number font', null, choice('font.number', FONTS)),
+    row('Font name', 'Any font on fonts.google.com', text('font.customNumber', 'e.g. Teko'), () => settings.font.number === 'custom'),
   ], badgeOnly);
 
   section('Border', [

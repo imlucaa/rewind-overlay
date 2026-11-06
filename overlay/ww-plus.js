@@ -48,12 +48,34 @@
     css.push(
       '.card-content{padding:8px 30px!important;gap:16px!important}',
       '.player-name{font-size:18px!important;letter-spacing:0!important;opacity:.85}',
-      `.vr-value{font-family:inherit!important;font-size:46px!important;font-weight:600!important;letter-spacing:-.01em!important;color:${hex(q.get('tc')) || '#ffffff'}!important;text-shadow:0 2px 10px #000c!important}`,
+      `.vr-value{${q.get('nfont') ? '' : 'font-family:inherit!important;'}font-size:46px!important;font-weight:600!important;letter-spacing:-.01em!important;color:${hex(q.get('tc')) || '#ffffff'}!important;text-shadow:0 2px 10px #000c!important}`,
       '.meta-line{margin-top:-2px!important;min-height:0!important;justify-content:center!important;gap:6px!important}',
       '.vr-label{font-size:9px!important;letter-spacing:.22em!important}',
       // the glass blur leaks past the round ends in Chrome
       '.background-shade{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}',
     );
+  // Fonts (font=<Google Fonts name> for the text, nfont=<name> for the number). Two requests: one asks for the bold
+  // weights, the plain one covers fonts that only come in one weight (that request just fails for those).
+  const fontName = v => (/^[A-Za-z0-9 ]{1,40}$/.test(v || '') ? v.trim() : null);
+  const loadFont = name => {
+    const family = encodeURIComponent(name).replace(/%20/g, '+');
+    for (const query of [`family=${family}:wght@400;500;600;700;800;900`, `family=${family}`]) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?${query}&display=swap`;
+      document.head.appendChild(link);
+    }
+  };
+  const textFontName = fontName(q.get('font'));
+  const numberFontName = fontName(q.get('nfont'));
+  if (textFontName) {
+    loadFont(textFontName);
+    css.push(`.overlay-shell,.overlay-shell :not(.vr-value):not(.vr-value *){font-family:"${textFontName}",system-ui,sans-serif!important}`);
+  }
+  if (numberFontName) {
+    if (numberFontName !== textFontName) loadFont(numberFontName);
+    css.push(`.overlay-shell .vr-value,.overlay-shell .vr-value *{font-family:"${numberFontName}",system-ui,sans-serif!important}`);
+  }
   // The page's "PREVIEW MODE" pill never shows (not in the preview, not in OBS).
   css.push('.preview-mode-pill{display:none!important}');
   // The page opens on a made-up sample player (87,747). It stays hidden until the real number is in (or 6 s pass),
@@ -255,7 +277,7 @@
   const page = document.createElement('script');
   page.type = 'module';
   page.crossOrigin = '';
-  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=26';
+  page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=27';
   document.head.appendChild(page);
 
   // ---------- race HUD digits, font and rank badge ----------
