@@ -200,6 +200,20 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
               <Row label="Volume" hint="Louder or quieter than the song is now">
                 <Slider label="Volume" value={first.volumeDb} min={-12} max={12} step={1} unit=" dB" onChange={v => setAll({ volumeDb: v }, 'volume')} />
               </Row>
+              <Row label="Skip the start" hint="Cuts a slow intro off the beginning">
+                <Slider
+                  label="Skip the start"
+                  value={first.trimStart ?? 0}
+                  min={0}
+                  max={Math.max(1, Math.min(60, Math.floor(song?.duration ?? 60) - 5))}
+                  step={0.5}
+                  unit=" s"
+                  onChange={v => setAll({ trimStart: v }, 'trim')}
+                />
+              </Row>
+              <Row label="Fade in" hint="Starts quiet and gets louder">
+                <Slider label="Fade in" value={first.fadeIn ?? 0} min={0} max={10} step={0.5} unit=" s" onChange={v => setAll({ fadeIn: v }, 'fade')} />
+              </Row>
               {single && song && loops ? (
                 <>
                   <h3 className="inspector-section">Loop</h3>
@@ -310,8 +324,8 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
       {single && first && song ? (
         <p className="note">
           {first.loop
-            ? `Plays ${formatDuration(first.loop.end / first.speed)}, then repeats the last ${formatDuration((first.loop.end - first.loop.start) / first.speed)}.`
-            : `Plays ${formatDuration(song.duration / first.speed)}, then starts again from the beginning.`}
+            ? `Plays ${formatDuration((first.loop.end - (first.trimStart ?? 0)) / first.speed)}, then repeats the last ${formatDuration((first.loop.end - Math.max(first.loop.start, first.trimStart ?? 0)) / first.speed)}.`
+            : `Plays ${formatDuration((song.duration - (first.trimStart ?? 0)) / first.speed)}, then starts again from the beginning.`}
         </p>
       ) : null}
     </div>

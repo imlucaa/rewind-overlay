@@ -98,6 +98,11 @@ export interface PlusSettings {
     changeBox: boolean;
     /** Race HUD: the last change stays beside the number until the next race, instead of counting away. */
     keepChange: boolean;
+    /** Stats tab: a VR goal (digits, empty for none), VR to the next rank, races this stream, win streak. */
+    goal: string;
+    nextRank: boolean;
+    raceCount: boolean;
+    winStreak: boolean;
   };
 }
 
@@ -126,6 +131,7 @@ export const PLUS_DEFAULTS: PlusSettings = {
   plus: {
     rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 2, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
     card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true, keepChange: false,
+    goal: '', nextRank: false, raceCount: false, winStreak: false,
   },
 };
 

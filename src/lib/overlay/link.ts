@@ -83,6 +83,11 @@ export function overlayQuery(settings: Settings): string {
     params.set('vrhud', '1');
     if (plus.keepChange) params.set('vk', 'on');
   }
+  const goal = parseInt(plus.goal.replace(/\D/g, ''), 10);
+  if (goal > 0) params.set('goal', String(goal));
+  if (plus.nextRank && !mmr) params.set('nr', 'on');
+  if (plus.raceCount) params.set('rc', 'on');
+  if (plus.winStreak) params.set('ws', 'on');
   if (plus.rankBadge) {
     params.set('rank', 'on');
     if (plus.rankBadgeKind) params.set('badge', plus.rankBadgeKind);

@@ -20,12 +20,28 @@ interface Props {
   onSaveFile: () => void;
   onLoadFile: (text: string) => string;
   onResetAll: () => void;
+  /** Measures the songs on tracks and sets their volumes; resolves with what happened. */
+  onEvenLoudness: (progress: (text: string) => void) => Promise<string>;
+  /** Copies a share link; resolves with what happened. */
+  onShare: () => Promise<string>;
 }
 
 /** Download the pack, check it first, and move assignments between browsers. */
-export function ExportView({ packName, target, onTarget, trackCount, fileCount, songCount, problems, status, onRename, onExport, onSaveFile, onLoadFile, onResetAll }: Props) {
+export function ExportView({ packName, target, onTarget, trackCount, fileCount, songCount, problems, status, onRename, onExport, onSaveFile, onLoadFile, onResetAll, onEvenLoudness, onShare }: Props) {
   const load = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
+  const [evening, setEvening] = useState(false);
+  const [loudnessMessage, setLoudnessMessage] = useState('');
+  const even = async () => {
+    setEvening(true);
+    try {
+      setLoudnessMessage(await onEvenLoudness(setLoudnessMessage));
+    } catch (err) {
+      setLoudnessMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setEvening(false);
+    }
+  };
   const blocking = problems.filter(p => p.kind === 'missing-song');
   const working = status.kind === 'working';
 
@@ -38,6 +54,16 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
         <Row label="Playing on" hint="Where you play Retro Rewind">
           <Select label="Playing on" value={target} options={TARGETS} onChange={onTarget} />
         </Row>
+        <Row label="Same loudness" hint="Sets each song’s volume so none are much louder or quieter than the rest">
+          <button className="button" type="button" disabled={evening || !trackCount} onClick={() => void even()}>
+            {evening ? 'Measuring…' : 'Even out loudness'}
+          </button>
+        </Row>
+        {loudnessMessage ? (
+          <p className="note" role="status">
+            {loudnessMessage}
+          </p>
+        ) : null}
         <Row label="In the pack" hint="Last lap files are added for you">
           <span className="figure">
             {trackCount} track{trackCount === 1 ? '' : 's'} · {fileCount} file{fileCount === 1 ? '' : 's'} · {songCount} song{songCount === 1 ? '' : 's'} to convert
@@ -90,13 +116,30 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
       </ol>
 
       <h2 className="sub">Back up your choices</h2>
-      <p className="note">Saves which song is on which track, so you can open it later or in another browser. It doesn’t save the songs themselves.</p>
+      <p className="note">
+        Saves which song is on which track, so you can open it later or in another browser. A share link does the same for someone
+        else. Neither has the songs themselves: the other person needs the same song files.
+      </p>
       <div className="inspector-actions">
         <button className="button" type="button" onClick={onSaveFile}>
           Save backup
         </button>
         <button className="button" type="button" onClick={() => load.current?.click()}>
           Open backup
+        </button>
+        <button
+          className="button"
+          type="button"
+          disabled={!trackCount}
+          onClick={async () => {
+            try {
+              setMessage(await onShare());
+            } catch (err) {
+              setMessage(err instanceof Error ? err.message : String(err));
+            }
+          }}
+        >
+          Copy share link
         </button>
         <input
           ref={load}

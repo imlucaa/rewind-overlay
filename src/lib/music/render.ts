@@ -52,10 +52,16 @@ async function decode(blob: Blob, rate: number): Promise<Float32Array[]> {
 export async function renderBrstm(blob: Blob, assignment: Assignment, onProgress?: (value: number) => void): Promise<Uint8Array> {
   const pitchShift = !assignment.keepPitch && assignment.speed !== 1;
   const decodeRate = pitchShift ? Math.round(SAMPLE_RATE / assignment.speed) : SAMPLE_RATE;
-  const channels = await decode(blob, decodeRate);
-  const loop = assignment.loop
-    ? { start: Math.round(assignment.loop.start * decodeRate), end: Math.round(assignment.loop.end * decodeRate) }
-    : null;
+  const decoded = await decode(blob, decodeRate);
+  // Skip the start: the file begins later, and the loop points move back by as much (a loop starting inside the cut
+  // part starts at the new beginning).
+  const trim = Math.min(decoded[0].length - 1, Math.max(0, Math.round((assignment.trimStart ?? 0) * decodeRate)));
+  const fade = Math.round((assignment.fadeIn ?? 0) * decodeRate);
+  const channels = trim || fade ? decoded.map(ch => ch.slice(trim)) : decoded;
+  for (const ch of fade ? channels : []) for (let i = 0; i < Math.min(fade, ch.length); i++) ch[i] *= i / fade;
+  const start = assignment.loop ? Math.max(0, Math.round(assignment.loop.start * decodeRate) - trim) : 0;
+  const end = assignment.loop ? Math.round(assignment.loop.end * decodeRate) - trim : 0;
+  const loop = assignment.loop && end > start + 1 ? { start, end } : null;
   const stretchSpeed = assignment.keepPitch ? assignment.speed : 1;
   const answer = await ask({ kind: 'encode', id: nextId++, channels, stretchSpeed, gainDb: assignment.volumeDb, rate: SAMPLE_RATE, loop, playsOnce: assignment.playsOnce }, onProgress);
   if (answer.kind !== 'done') throw new Error('The encoder gave no file.');

@@ -10,6 +10,10 @@ export interface PreviewSettings {
   volumeDb: number;
   /** Seconds of the song. Playback jumps back from the end to the start, as in the game. */
   loop?: LoopPoints | null;
+  /** Seconds skipped at the start. */
+  trimStart?: number;
+  /** Seconds of fade in from the start. */
+  fadeIn?: number;
 }
 
 const NORMAL: PreviewSettings = { speed: 1, keepPitch: true, volumeDb: 0 };
@@ -84,9 +88,21 @@ export function usePreview() {
       if (context.current.state === 'suspended') await context.current.resume();
       apply(settings);
       setTitle(title);
-      if (from !== undefined) {
+      // From the top (not resuming, not a jump to a spot): where the export starts, fading in like it.
+      const trim = settings.trimStart ?? 0;
+      const fromTop = from === undefined && (a.currentTime < trim || a.ended || loaded !== key + songId);
+      const start = from ?? (fromTop && trim ? trim : undefined);
+      if (start !== undefined) {
         if (a.readyState < 1) await new Promise(resolve => a.addEventListener('loadedmetadata', resolve, { once: true }));
-        a.currentTime = Math.max(0, from);
+        a.currentTime = Math.max(0, start);
+      }
+      const fade = settings.fadeIn ?? 0;
+      if (fromTop && fade && gain.current && context.current) {
+        const g = gain.current.gain;
+        const now = context.current.currentTime;
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(0, now);
+        g.linearRampToValueAtTime(Math.pow(10, settings.volumeDb / 20), now + fade / settings.speed);
       }
       await a.play();
       setPlaying(key);

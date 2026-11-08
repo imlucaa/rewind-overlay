@@ -44,6 +44,10 @@ export interface Assignment {
   loop: LoopPoints | null;
   /** How much faster the final lap plays (speed and pitch together, as the game does). */
   finalSpeed: number;
+  /** Seconds cut off the start of the song (a slow intro). Loop points stay in seconds of the whole song. */
+  trimStart?: number;
+  /** Seconds the song takes to fade in from silence. */
+  fadeIn?: number;
   /** Set by the plan for short jingles: the file plays once and stops. */
   playsOnce?: boolean;
   /**
@@ -91,11 +95,11 @@ export type Problem =
 
 /** What the final lap song is encoded with: the track's settings, the whole song looping. */
 export const finalAssignment = (a: Assignment): Assignment | null =>
-  a.finalSongId && a.finalSongId !== a.songId ? { ...a, songId: a.finalSongId, loop: null, finalSongId: null } : null;
+  a.finalSongId && a.finalSongId !== a.songId ? { ...a, songId: a.finalSongId, loop: null, finalSongId: null, trimStart: 0, fadeIn: 0 } : null;
 
 // The final lap speed isn't part of the key: it only changes the copy's header, not the encode.
 export const jobKey = (a: Assignment): string =>
-  `${a.songId}|${a.speed}|${a.keepPitch && a.speed !== 1}|${a.volumeDb}|${a.playsOnce ? 'once' : a.loop ? `${a.loop.start}-${a.loop.end}` : ''}`;
+  `${a.songId}|${a.speed}|${a.keepPitch && a.speed !== 1}|${a.volumeDb}|${a.playsOnce ? 'once' : a.loop ? `${a.loop.start}-${a.loop.end}` : ''}|${a.trimStart ?? 0}|${a.fadeIn ?? 0}`;
 
 /**
  * The files a track gets. The final lap file is the same audio (or the final lap song) with a faster header rate.

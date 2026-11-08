@@ -341,6 +341,104 @@
   page.src = base + 'assets/' + (mmr ? 'mmr-' : '') + 'index-CPppRstO.js?v=32';
   document.head.appendChild(page);
 
+  // ---------- stream stats under the overlay: goal=<n>, nr=on (to next rank), rc=on (races), ws=on (streak) ----------
+  // Counted from the page's own player data, not the number on screen (that one counts up during a change). A test
+  // race from the settings page doesn't count.
+  const goal = parseInt(q.get('goal'), 10) || 0;
+  const showNext = q.get('nr') === 'on' && !mmr;
+  const showRaces = q.get('rc') === 'on';
+  const showStreak = q.get('ws') === 'on';
+  if (goal > 0 || showNext || showRaces || showStreak) {
+    const unit = mkw ? 'LR' : mmr ? 'MMR' : 'VR';
+    const steps = [[24000, 'D rank'], [36000, 'C rank'], [48000, 'B rank'], [60000, 'A rank'], [72000, 'Star rank'], [84000, '2 star rank'], [94000, '3 star rank'], [100000, 'Crown']];
+    const fmt = n => Math.round(n).toLocaleString('en-US');
+    const hud = q.get('vrhud') === '1';
+    const plain = q.get('card') === 'off' || hud;
+    style.textContent +=
+      '#ww-stats{position:fixed;z-index:2147483646;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none;font-weight:700;letter-spacing:.02em}' +
+      `#ww-stats>span{white-space:nowrap;padding:${plain ? '0' : '.3em .75em'};border-radius:99px;color:${hex(q.get('mc')) || '#c9d1e7'};${plain ? 'text-shadow:0 1px 4px #000c' : 'background:#090b12b8'}}` +
+      `#ww-stats b{color:${hex(q.get('tc')) || '#ffffff'}}#ww-stats .up{color:${gain}}` +
+      '#ww-stats .goal{flex:1 1 100%;display:flex;align-items:center;gap:.6em;padding:0;background:none}' +
+      `#ww-stats .goal i{flex:1;height:.45em;border-radius:99px;background:linear-gradient(90deg,${gain} var(--p),#ffffff26 var(--p));box-shadow:0 1px 4px #0008}` +
+      // Race HUD: its letters are wider than the page's, so the bar goes under the words, not beside them.
+      (hud ? '#ww-stats .goal{flex-direction:column;align-items:flex-end;gap:.35em}#ww-stats .goal i{flex:none;width:100%}#ww-stats b{color:inherit}' : '');
+    const box = document.createElement('div');
+    box.id = 'ww-stats';
+    const session = { start: null, last: null, races: 0, up: 0, down: 0, streak: 0 };
+    let said = '';
+    const tick = () => {
+      if (!box.isConnected && document.body) document.body.appendChild(box);
+      const ctl = (window.__wwOverlays || []).find(c => c.engine?.player?.source === 'rwfc' && c.listeners.size);
+      const shell = document.querySelector('.overlay-shell');
+      const v = ctl?.engine?.player?.vr;
+      if (!shell || typeof v !== 'number' || document.documentElement.classList.contains('ww-wait')) {
+        box.style.display = 'none';
+        return;
+      }
+      if (!carding && !ctl.busy) {
+        // 87,747 is the page's sample player, shown before the real one loads.
+        if (session.last === null || session.last === 87747) session.start = session.last = v;
+        else if (v !== session.last) {
+          session.races++;
+          if (v > session.last) {
+            session.up++;
+            session.streak++;
+          } else {
+            session.down++;
+            session.streak = 0;
+          }
+          session.last = v;
+        }
+      }
+      const now = session.last;
+      const parts = [];
+      if (goal > 0) {
+        const done = now >= goal;
+        // The bar fills from where the stream started, so it moves with each race.
+        const from = Math.min(session.start, goal);
+        const p = done ? 1 : goal > from ? Math.max(0, (now - from) / (goal - from)) : 0;
+        parts.push(`<span class="goal"><span>${done ? '<b>Goal reached</b>' : `<b>${fmt(goal - now)}</b> ${unit} to goal`}</span><i style="--p:${(p * 100).toFixed(1)}%"></i></span>`);
+      }
+      if (showNext) {
+        const next = steps.find(([at]) => now < at);
+        parts.push(next ? `<span><b>${fmt(next[0] - now)}</b> VR to ${next[1]}</span>` : '<span>Top rank</span>');
+      }
+      if (showRaces)
+        parts.push(
+          session.races
+            ? `<span><b>${session.races}</b> race${session.races === 1 ? '' : 's'} · <b>${session.up}</b> up · <b>${session.down}</b> down</span>`
+            : '<span>No races yet</span>',
+        );
+      if (showStreak && session.streak >= 2) parts.push(`<span class="up">${session.streak} wins in a row</span>`);
+      const html = parts.join('');
+      if (html !== said) box.innerHTML = said = html;
+      // Under the overlay, as wide as it, scaled with it. Without the card, under what is actually shown (the card's
+      // box is bigger than that), and on the race HUD lined up with the number on the right.
+      const r = shell.getBoundingClientRect();
+      const size = Math.max(9, (r.width / 560) * (hud ? 16 : 13));
+      let { left, right, bottom } = r;
+      if (plain) {
+        left = Infinity;
+        right = bottom = -Infinity;
+        const add = b => {
+          if (b.width <= 0 || b.height <= 0) return;
+          left = Math.min(left, b.left);
+          right = Math.max(right, b.right);
+          bottom = Math.max(bottom, b.bottom);
+        };
+        for (const el of shell.querySelectorAll('*')) {
+          const leaf = /^(IMG|CANVAS|SVG)$/i.test(el.tagName) || (!el.firstElementChild && el.textContent.trim());
+          const cs = leaf && getComputedStyle(el);
+          if (leaf && cs.visibility !== 'hidden' && cs.opacity !== '0' && cs.display !== 'none') add(el.getBoundingClientRect());
+        }
+        for (const el of document.querySelectorAll('#ww-layer > div:not([data-side]) > *')) add(el.getBoundingClientRect());
+        if (left >= right) ({ left, right, bottom } = r);
+      }
+      box.style.cssText = `display:${html ? 'flex' : 'none'};left:${left}px;top:${bottom + size * 0.6}px;width:${right - left}px;font-size:${size}px;justify-content:${hud ? 'flex-end' : 'center'}`;
+    };
+    setInterval(tick, 250);
+  }
+
   // ---------- race HUD digits, font and rank badge ----------
   const rank = q.get('rank') === 'on';
   if (!digits && !rank) return;
@@ -549,6 +647,10 @@
       for (const el of document.querySelectorAll('.rank-chip > span')) list.push({ el, kind: 'extra', col: tint.rank, text: clean(el.textContent || '') });
       for (const el of document.querySelectorAll('.rank-chip > b'))
         list.push({ el, kind: 'extra', col: el.classList.contains('negative') ? tint.loss : tint.gain, text: clean(el.textContent || '') });
+      for (const el of document.querySelectorAll('#ww-stats > span:not(.goal)'))
+        list.push({ el, kind: 'extra', stat: true, col: el.classList.contains('up') ? tint.gain : tint.muted, text: clean(el.textContent || '') });
+      for (const el of document.querySelectorAll('#ww-stats > .goal > span'))
+        list.push({ el, kind: 'extra', stat: true, col: tint.muted, text: clean(el.textContent || '') });
       for (const el of document.querySelectorAll('.connection, .context-line > span'))
         list.push({
           el,
@@ -642,7 +744,7 @@
               : i.kind === 'name' || i.kind === 'extra'
               ? `left:${i.r.left + i.pad}px`
               : `right:${fontHere ? innerWidth - i.r.right : innerWidth - i.r.left + h * badgeGap}px`;
-          if (i.kind === 'side') box.dataset.side = '1'; // the change comes and goes: it doesn't move the centre
+          if (i.kind === 'side' || i.stat) box.dataset.side = '1'; // the change and the stats don't move the centre
           const top = i.kind === 'side' ? i.r.top + i.r.height * 0.12 : i.r.top + (i.r.height - h) / 2;
           box.style.cssText = `position:fixed;top:${top}px;${side};height:${h}px;display:flex;align-items:center`;
           if (rank && i.kind === 'vr') {

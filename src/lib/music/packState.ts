@@ -27,6 +27,8 @@ function readAssignment(v: unknown): Assignment | null {
     loop: readLoop(v.loop),
     finalSpeed: FINAL_SPEED_CHOICES.some(([speed]) => speed === v.finalSpeed) ? (v.finalSpeed as number) : FINAL_LAP_SPEED,
     finalSongId: typeof v.finalSongId === 'string' && v.finalSongId && v.finalSongId !== v.songId ? v.finalSongId : null,
+    ...(typeof v.trimStart === 'number' && v.trimStart > 0 ? { trimStart: Math.min(60, v.trimStart) } : {}),
+    ...(typeof v.fadeIn === 'number' && v.fadeIn > 0 ? { fadeIn: Math.min(10, v.fadeIn) } : {}),
   };
 }
 

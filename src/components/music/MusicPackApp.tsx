@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStoredState } from '@/hooks/useStoredState';
 import { AppShell, Tab } from '@/components/layout/AppShell';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -8,9 +8,11 @@ import { usePack } from '@/hooks/usePack';
 import { usePreview } from '@/hooks/usePreview';
 import { download, useExport } from '@/hooks/useExport';
 import { usePackImport } from '@/hooks/usePackImport';
-import { newAssignment, planPack } from '@/lib/music/pack';
+import { SAMPLE_RATE, newAssignment, planPack } from '@/lib/music/pack';
 import { packFromFile, packToFile, safeFileName } from '@/lib/music/packState';
-import type { SongInfo } from '@/lib/music/library';
+import { songBlob, type SongInfo } from '@/lib/music/library';
+import { evenVolumes, loudnessDb } from '@/lib/music/loudness';
+import { readShareLink, shareLink } from '@/lib/music/share';
 import type { Track } from '@/lib/music/tracks';
 import { LibraryView } from './LibraryView';
 import { TracksView, type TrackFilter } from './TracksView';
@@ -111,6 +113,64 @@ export function MusicPackApp({ tracks }: Props) {
         ),
       })),
     );
+  };
+
+  /** Loads an assignments file (or a share link's) over the current choices; returns what happened. */
+  const loadPackText = (text: string): string => {
+    const result = packFromFile(text, library.songs, trackFiles);
+    update(p => ({ ...result.pack, target: p.target }));
+    const count = Object.keys(result.pack.assignments).length;
+    const skipped = [
+      result.missing ? `${result.missing} whose song you don’t have` : '',
+      result.unknownTracks ? `${result.unknownTracks} for tracks Retro Rewind doesn’t have` : '',
+    ].filter(Boolean);
+    return `Loaded songs for ${count} track${count === 1 ? '' : 's'}.` + (skipped.length ? ` Skipped ${skipped.join(' and ')}.` : '');
+  };
+
+  // The listener below lives across renders, so it reads the latest loader (and with it the latest songs).
+  const loadLatest = useRef(loadPackText);
+  useEffect(() => {
+    loadLatest.current = loadPackText;
+  });
+
+  // A share link (music-pack/#pack=...): offered once the songs are loaded, so they can be matched; also when the
+  // link is opened in a tab that's already on this page (only the # part changes then).
+  useEffect(() => {
+    if (!library.ready) return;
+    const open = () => {
+      if (!location.hash.startsWith('#pack=')) return;
+      const hash = location.hash;
+      history.replaceState(null, '', location.pathname + location.search);
+      void readShareLink(hash)
+        .then(text => {
+          if (!text) return;
+          if (!window.confirm('Open the shared music pack? It replaces the songs on your tracks (Undo brings them back).')) return;
+          window.alert(loadLatest.current(text) + ' Songs are matched by file name and size, so you need the same song files.');
+        })
+        .catch(err => window.alert(err instanceof Error ? err.message : String(err)));
+    };
+    open();
+    window.addEventListener('hashchange', open);
+    return () => window.removeEventListener('hashchange', open);
+  }, [library.ready]);
+
+  const evenLoudness = async (progress: (text: string) => void): Promise<string> => {
+    const ids = [...new Set(Object.values(pack.assignments).map(a => a.songId))].filter(id => songsById.has(id));
+    const { songWave } = await import('@/lib/music/render');
+    const levels = new Map<string, number>();
+    for (const [i, id] of ids.entries()) {
+      progress(`Measuring song ${i + 1} of ${ids.length}…`);
+      const blob = await songBlob(id);
+      if (blob) levels.set(id, loudnessDb((await songWave(id, blob)).mono, SAMPLE_RATE));
+    }
+    const volumes = evenVolumes(levels);
+    update(p => ({
+      ...p,
+      assignments: Object.fromEntries(
+        Object.entries(p.assignments).map(([file, a]) => [file, volumes.has(a.songId) ? { ...a, volumeDb: volumes.get(a.songId)! } : a]),
+      ),
+    }));
+    return `Done: ${volumes.size} song${volumes.size === 1 ? '' : 's'} now play at about the same loudness. Undo puts the old volumes back.`;
   };
 
   const exportAll = () => void exporter.run(plan.jobs, `${safeFileName(pack.packName)}.zip`, true, pack.target);
@@ -255,15 +315,16 @@ export function MusicPackApp({ tracks }: Props) {
           onRename={name => update(p => ({ ...p, packName: name }), 'name')}
           onExport={exportAll}
           onSaveFile={() => download(new Blob([packToFile(pack, library.songs)], { type: 'application/json' }), `${safeFileName(pack.packName)}.json`)}
-          onLoadFile={text => {
-            const result = packFromFile(text, library.songs, trackFiles);
-            update(p => ({ ...result.pack, target: p.target }));
-            const count = Object.keys(result.pack.assignments).length;
-            const skipped = [
-              result.missing ? `${result.missing} whose song isn’t in this library` : '',
-              result.unknownTracks ? `${result.unknownTracks} for tracks Retro Rewind doesn’t have` : '',
-            ].filter(Boolean);
-            return `Loaded songs for ${count} track${count === 1 ? '' : 's'}.` + (skipped.length ? ` Skipped ${skipped.join(' and ')}.` : '');
+          onLoadFile={loadPackText}
+          onEvenLoudness={evenLoudness}
+          onShare={async () => {
+            const link = await shareLink(packToFile(pack, library.songs), location.href);
+            try {
+              await navigator.clipboard.writeText(link);
+            } catch {
+              window.prompt('Copy this link:', link);
+            }
+            return 'Share link copied. Whoever opens it needs the same song files; they’re matched by file name and size.';
           }}
           onResetAll={() => {
             if (window.confirm('Put every track back to its original music? You can press Undo to get them back.'))
