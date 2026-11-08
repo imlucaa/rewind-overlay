@@ -14,7 +14,7 @@
   --warn: #fbbf24;
   --r: 8px;
   --fast: 120ms;
-  font-family: "General Sans", Inter, "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font, "General Sans", Inter, "Segoe UI", system-ui, sans-serif);
   font-size: 14px;
 }
 
@@ -180,8 +180,7 @@ p {
 }
 
 .button.primary:hover {
-  background: #d4d4d8;
-  border-color: #d4d4d8;
+  filter: brightness(0.88);
 }
 
 .button[aria-disabled="true"] {
@@ -328,7 +327,7 @@ input[type="range"] {
   width: 34px;
   height: 20px;
   border-radius: 99px;
-  background: #2a2a2f;
+  background: var(--line-strong);
   position: relative;
   cursor: pointer;
   transition: background var(--fast);
@@ -469,7 +468,8 @@ input[type="range"] {
       "panel";
   }
 
-  #open {
+  #open,
+  .hide-small {
     display: none;
   }
 
@@ -700,4 +700,191 @@ input[type="range"] {
   .mini-hud {
     height: 18px;
   }
+}
+
+/* ---------- site themes (Site look) ---------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --hover: #efeff1;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --text: #18181b;
+  --muted: #52525b;
+  --soft: #71717a;
+  --accent: #18181b;
+  --accent-ink: #ffffff;
+  --live: #16a34a;
+  --warn: #b45309;
+}
+
+:root[data-theme="midnight"] {
+  --bg: #0b1020;
+  --surface: #111831;
+  --hover: #18213f;
+  --line: #1f2a4a;
+  --line-strong: #2b3964;
+  --text: #e6ebff;
+  --muted: #9aa6cf;
+  --soft: #6b78a3;
+  --accent: #7aa2ff;
+  --accent-ink: #0b1020;
+}
+
+:root[data-theme="grape"] {
+  --bg: #120b18;
+  --surface: #1a1023;
+  --hover: #24172f;
+  --line: #2e1f3b;
+  --line-strong: #3f2b51;
+  --text: #f3e9ff;
+  --muted: #b9a3cf;
+  --soft: #8a74a0;
+  --accent: #c084fc;
+  --accent-ink: #120b18;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.site-look {
+  position: relative;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.site-look-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.site-look-button:hover,
+.site-look-button[aria-expanded="true"] {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.site-look-panel {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 280px;
+  padding: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: 0 12px 32px #0006;
+}
+
+.site-look-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.site-look-panel select,
+.site-look-panel input[type="text"] {
+  width: 100%;
+}
+
+.site-look-accent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-look-accent .color input[type="text"] {
+  width: 90px;
+}
+
+.site-look-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-look-row small {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--soft);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.site-look-panel .note,
+.site-look-panel .link-button {
+  margin: 0;
+}
+
+.site-look-panel .link-button {
+  align-self: flex-start;
+}
+
+@media (max-width: 1180px) {
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar .nav {
+    flex: 1;
+  }
+
+  .site-look {
+    flex: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-look-button {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .site-look-panel {
+    top: calc(100% + 6px);
+    right: 0;
+    bottom: auto;
+    left: auto;
+  }
+}
+
+.site-look-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.site-look-custom label {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-look-custom .color input[type="text"] {
+  width: 90px;
 }

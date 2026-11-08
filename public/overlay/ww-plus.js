@@ -198,19 +198,32 @@
     return lounge.player;
   }
 
+  // RR Lounge's division emblems are 1.2-1.9 MB each; overlay/lounge/ has 256 px copies (about 15 KB). An emblem
+  // not copied yet still loads from rr-lounge.com.
+  const LOCAL_ICONS = ['amethyst', 'bronze', 'diamond', 'diamond_outline', 'emerald', 'gold', 'legend', 'master', 'opal', 'platinum', 'ruby', 'silver'];
+  function divisionIcon(path) {
+    if (!path) return null;
+    const name = /^\/icons\/new_([a-z_]+)\.png$/.exec(path)?.[1];
+    const url = name && LOCAL_ICONS.includes(name) ? base + 'lounge/new_' + name + '.webp' : 'https://rr-lounge.com' + path;
+    new Image().src = url; // start loading before the overlay draws it
+    return url;
+  }
+
   async function readLounge() {
     if (mkw) return readMkw();
     try {
+      // Both start at once: the division data doesn't wait for the leaderboard.
+      const extrasLoading = loungeExtras();
       const board = await (await realFetch(`https://rr-lounge.com/api/leaderboard?category=${ladder}`, { cache: 'no-store' })).json();
       const found = (board.players || []).find(p => p.name.toLowerCase() === loungeName.toLowerCase());
       if (found) {
-        const data = await loungeExtras();
+        const data = await extrasLoading;
         const tiers = (data?.tiers || []).slice().sort((a, b) => b.minMmr - a.minMmr);
         const tier = tiers.find(t => found.mmr >= t.minMmr) || null;
         lounge.player = found;
         lounge.info = {
           country: data?.countries?.[found.id] || null,
-          icon: tier?.icon ? 'https://rr-lounge.com' + tier.icon : null,
+          icon: divisionIcon(tier?.icon),
           division: tier?.name || null,
           color: tier?.color || null,
         };

@@ -10,7 +10,7 @@ import pathlib
 import urllib.request
 
 LADDERS = ["rr", "ct", "tt"]
-OUT = pathlib.Path(__file__).resolve().parent.parent / "data"
+OUT = pathlib.Path(__file__).resolve().parent.parent / "public" / "data"
 
 
 def page(ladder: str) -> str:

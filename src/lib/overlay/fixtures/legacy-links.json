@@ -1,0 +1,850 @@
+[
+ {
+  "name": "vr defaults",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#ffffff",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "vr",
+    "friendCode": "1234-5678-9012",
+    "tag": "",
+    "pollSeconds": 5,
+    "loungeName": "",
+    "ladder": "rr",
+    "mkwLadder": "rt",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": true,
+    "hudDigits": false,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=123456789012&tc=ffffff&mc=c9d1e7"
+ },
+ {
+  "name": "vr poll, tag, colors",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#eeeeee",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#ff0000",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "vr",
+    "friendCode": "123456789012",
+    "tag": "Lucaa",
+    "pollSeconds": 9,
+    "loungeName": "",
+    "ladder": "rr",
+    "mkwLadder": "rt",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": true,
+    "hudDigits": false,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=123456789012&colors=ff0000-5ef0a5-ff6d7e-ffe88f&tag=Lucaa&poll=9&cfg=eyJ0eXBvZ3JhcGh5Ijp7InRleHRDb2xvciI6IiNlZWVlZWUifX0&tc=eeeeee&mc=c9d1e7"
+ },
+ {
+  "name": "mmr rr ladder ct flag",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#ffffff",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "mmr",
+    "friendCode": "",
+    "tag": "",
+    "pollSeconds": 5,
+    "loungeName": "Luca",
+    "ladder": "ct",
+    "mkwLadder": "rt",
+    "flag": true
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": true,
+    "hudDigits": false,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=021474836481&cfg=eyJkYXRhIjp7ImxlYWRlcmJvYXJkVXJsIjoiLi93dy1tbXIvcGxheWVyL3tmcmllbmRDb2RlfSIsImdyb3Vwc1VybCI6Ii4vd3ctbW1yL3Jvb21zIn19&src=mmr&ln=Luca&ladder=ct&flag=on&tc=ffffff&mc=c9d1e7"
+ },
+ {
+  "name": "mkw lounge",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#ffffff",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "mkw",
+    "friendCode": "",
+    "tag": "",
+    "pollSeconds": 5,
+    "loungeName": "Someone",
+    "ladder": "rr",
+    "mkwLadder": "ct",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": true,
+    "hudDigits": false,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=021474836481&cfg=eyJkYXRhIjp7ImxlYWRlcmJvYXJkVXJsIjoiLi93dy1tbXIvcGxheWVyL3tmcmllbmRDb2RlfSIsImdyb3Vwc1VybCI6Ii4vd3ctbW1yL3Jvb21zIn19&src=mkw&ln=Someone&ladder=ct&tc=ffffff&mc=c9d1e7"
+ },
+ {
+  "name": "race hud",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": true,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#ffffff",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "race hud",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "Inter",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "vr",
+    "friendCode": "123456789012",
+    "tag": "x",
+    "pollSeconds": 5,
+    "loungeName": "",
+    "ladder": "rr",
+    "mkwLadder": "rt",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": true,
+    "hudDigits": false,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=123456789012&cfg=eyJ2aXNpYmlsaXR5Ijp7ImF2YXRhciI6ZmFsc2UsIm5hbWUiOmZhbHNlLCJ0YWciOmZhbHNlLCJyYW5rRGVsdGEiOmZhbHNlfSwiYW5pbWF0aW9ucyI6eyJ2ciI6ImNvdW50In19&card=off&digits=hud&text=hud&vrhud=1&tc=ffffff&mc=c9d1e7"
+ },
+ {
+  "name": "slim mmr division",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": true,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#ffffff",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "solid",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "mmr",
+    "friendCode": "",
+    "tag": "",
+    "pollSeconds": 5,
+    "loungeName": "A B",
+    "ladder": "rr",
+    "mkwLadder": "rt",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": true,
+    "hudDigits": false,
+    "look": "slim",
+    "divisionBacking": true,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=021474836481&cfg=eyJsYXlvdXQiOnsiY29tcGFjdCI6dHJ1ZX0sImJvcmRlciI6eyJlZmZlY3QiOiJzb2xpZCJ9LCJkYXRhIjp7ImxlYWRlcmJvYXJkVXJsIjoiLi93dy1tbXIvcGxheWVyL3tmcmllbmRDb2RlfSIsImdyb3Vwc1VybCI6Ii4vd3ctbW1yL3Jvb21zIn19&src=mmr&ln=A+B&ladder=rr&look=slim&db=on&tc=ffffff&mc=c9d1e7"
+ },
+ {
+  "name": "badge outline fonts",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": false,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "gradient",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 560,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 800,
+    "textColor": "#ffffff",
+    "mutedColor": "#c9d1e7",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 0,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 5.5,
+    "glow": true,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "flip",
+    "durationMs": 1100,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "custom",
+    "number": "Teko",
+    "customText": " Exo 2 ",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "vr",
+    "friendCode": "123456789012",
+    "tag": "",
+    "pollSeconds": 5,
+    "loungeName": "",
+    "ladder": "rr",
+    "mkwLadder": "rt",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": true,
+    "rankOutline": true,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 3.5,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "crown",
+    "card": true,
+    "hudDigits": false,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": false,
+    "changeBox": false
+   }
+  },
+  "query": "view=overlay&fc=123456789012&font=Exo+2&nfont=Teko&vl=off&cb=off&rank=on&badge=crown&bs=100&bg=15&ro=ffffff&rw=3.5&tc=ffffff&mc=c9d1e7"
+ },
+ {
+  "name": "everything visual",
+  "settings": {
+   "visibility": {
+    "avatar": true,
+    "name": true,
+    "tag": true,
+    "vr": true,
+    "delta": true,
+    "rank": true,
+    "rankDelta": true,
+    "connection": true,
+    "room": false,
+    "track": false,
+    "sessionDelta": false,
+    "dailyDelta": false
+   },
+   "avatar": {
+    "background": "solid",
+    "color1": "#31d4ff",
+    "color2": "#3556ae"
+   },
+   "layout": {
+    "scale": 1,
+    "width": 600,
+    "compact": false,
+    "align": "horizontal"
+   },
+   "typography": {
+    "weight": 600,
+    "textColor": "#ffffff",
+    "mutedColor": "#123456",
+    "vrColor": "#8effc6",
+    "gainColor": "#5ef0a5",
+    "lossColor": "#ff6d7e",
+    "rankColor": "#ffe88f"
+   },
+   "background": {
+    "imageUrl": "https://example.com/a.png",
+    "fit": "cover",
+    "x": 50,
+    "y": 50,
+    "zoom": 1,
+    "blur": 4,
+    "brightness": 0.58,
+    "saturation": 1.15,
+    "contrast": 1.08,
+    "overlayColor": "#07111f",
+    "overlayOpacity": 0.38,
+    "glass": 0.26
+   },
+   "border": {
+    "effect": "rainbow",
+    "width": 4,
+    "radius": 38,
+    "speed": 2.5,
+    "glow": false,
+    "glowStrength": 0.65,
+    "color1": "#22d3ee",
+    "color2": "#8b5cf6",
+    "color3": "#f97316"
+   },
+   "animations": {
+    "vr": "count",
+    "rank": "spring",
+    "durationMs": 900,
+    "celebrateThreshold": 250,
+    "reducedMotion": false
+   },
+   "preview": {
+    "gain": 41
+   },
+   "font": {
+    "text": "",
+    "number": "",
+    "customText": "",
+    "customNumber": ""
+   },
+   "player": {
+    "source": "vr",
+    "friendCode": "123456789012",
+    "tag": "",
+    "pollSeconds": 5,
+    "loungeName": "",
+    "ladder": "rr",
+    "mkwLadder": "rt",
+    "flag": false
+   },
+   "plus": {
+    "rankBadge": false,
+    "rankOutline": false,
+    "rankOutlineColor": "#ffffff",
+    "rankOutlineWidth": 2,
+    "rankBadgeSize": 100,
+    "rankBadgeGap": 15,
+    "rankBadgeKind": "",
+    "card": false,
+    "hudDigits": true,
+    "look": "card",
+    "divisionBacking": false,
+    "vrLabel": true,
+    "changeBox": true
+   }
+  },
+  "query": "view=overlay&fc=123456789012&cfg=eyJ2aXNpYmlsaXR5Ijp7ImNvbm5lY3Rpb24iOnRydWV9LCJhdmF0YXIiOnsiYmFja2dyb3VuZCI6InNvbGlkIn0sImxheW91dCI6eyJ3aWR0aCI6NjAwfSwidHlwb2dyYXBoeSI6eyJ3ZWlnaHQiOjYwMCwibXV0ZWRDb2xvciI6IiMxMjM0NTYifSwiYmFja2dyb3VuZCI6eyJpbWFnZVVybCI6Imh0dHBzOi8vZXhhbXBsZS5jb20vYS5wbmciLCJibHVyIjo0fSwiYm9yZGVyIjp7InNwZWVkIjoyLjUsImdsb3ciOmZhbHNlfSwiYW5pbWF0aW9ucyI6eyJyYW5rIjoic3ByaW5nIiwiZHVyYXRpb25NcyI6OTAwfX0&card=off&digits=hud&tc=ffffff&mc=123456"
+ }
+]
