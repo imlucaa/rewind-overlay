@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStoredState } from '@/hooks/useStoredState';
 import {
-  FONTS, MAX_FONT_BYTES, THEMES, THEME_KEY, applyTheme, customVars, defaultTheme, parseTheme, type CustomColors, type SiteTheme,
+  FONTS, INTROS, MAX_FONT_BYTES, THEMES, THEME_KEY, applyTheme, customVars, defaultTheme, parseTheme, playIntro, type CustomColors,
+  type SiteTheme,
 } from '@/lib/siteTheme';
 import { ColorField, Select } from '@/components/ui/controls';
 
@@ -153,6 +154,23 @@ export function SiteLook() {
               if (f) void loadFile(f);
             }}
           />
+          <label>
+            <span>Opening animation</span>
+            <div className="site-look-row">
+              <Select
+                label="Opening animation"
+                value={theme.intro}
+                options={INTROS}
+                onChange={v => {
+                  set({ intro: v });
+                  playIntro(v);
+                }}
+              />
+              <button className="button" type="button" disabled={theme.intro === 'off'} onClick={() => playIntro(theme.intro)}>
+                ▶ Preview
+              </button>
+            </div>
+          </label>
           {message ? <p className="note">{message}</p> : null}
           <button
             className="link-button"

@@ -28,7 +28,7 @@ const base64url = (text: string): string =>
   btoa(String.fromCharCode(...new TextEncoder().encode(text))).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 const bare = (color: string): string => (color || '').replace('#', '');
 
-const HUD_HIDDEN = ['avatar', 'name', 'tag', 'rankDelta', 'connection', 'room', 'track', 'sessionDelta', 'dailyDelta'] as const;
+const HUD_HIDDEN = ['avatar', 'name', 'tag', 'rankDelta', 'connection', 'room', 'track', 'dailyDelta'] as const;
 
 /** The overlay link's query string. `overlayUrl` joins it to the overlay page's address. */
 export function overlayQuery(settings: Settings): string {
@@ -37,7 +37,7 @@ export function overlayQuery(settings: Settings): string {
   const page = {} as PageSettings;
   for (const key of Object.keys(PAGE_DEFAULTS) as (keyof PageSettings)[])
     (page as unknown as Record<string, unknown>)[key] = structuredClone(settings[key]);
-  // Race HUD only has the VR and the rank: the rest stays off whatever the card had.
+  // Race HUD only has the VR, the rank and the session change: the rest stays off whatever the card had.
   if (hud) for (const key of HUD_HIDDEN) page.visibility[key] = false;
   const patch = diff(PAGE_DEFAULTS, structuredClone(page));
   // Colours Wheel Wizard+ adds itself (the page has them fixed).
@@ -81,6 +81,7 @@ export function overlayQuery(settings: Settings): string {
   if (hud) {
     params.set('text', 'hud');
     params.set('vrhud', '1');
+    if (plus.keepChange) params.set('vk', 'on');
   }
   if (plus.rankBadge) {
     params.set('rank', 'on');

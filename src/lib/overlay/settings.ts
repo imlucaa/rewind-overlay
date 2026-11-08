@@ -96,6 +96,8 @@ export interface PlusSettings {
     divisionBacking: boolean;
     vrLabel: boolean;
     changeBox: boolean;
+    /** Race HUD: the last change stays beside the number until the next race, instead of counting away. */
+    keepChange: boolean;
   };
 }
 
@@ -123,7 +125,7 @@ export const PLUS_DEFAULTS: PlusSettings = {
   player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', mkwLadder: 'rt', flag: false },
   plus: {
     rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 2, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
-    card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true,
+    card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true, keepChange: false,
   },
 };
 

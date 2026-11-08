@@ -31,7 +31,7 @@ export function PackSummary({ packName, tracks, assignments, songs, problems, on
   const assigned = rows.reduce((n, r) => n + r.done, 0);
   // Only until the first track has a song; after that the bars say it all.
   const hint = !songs.length
-    ? 'Add songs on the left (or import a pack you already have), then give them tracks.'
+    ? 'Add songs (or import a pack you already have), then give them tracks.'
     : !assigned
       ? 'Open Tracks, pick a track and click one of your songs.'
       : '';
@@ -62,7 +62,7 @@ export function PackSummary({ packName, tracks, assignments, songs, problems, on
 
       {problems.length ? (
         <>
-          <h3 className="inspector-section">Needs a look</h3>
+          <h3 className="inspector-section">Needs fixing</h3>
           <ul className="summary-problems">
             {problems.map(p =>
               p.kind === 'long-song' ? (
@@ -74,7 +74,7 @@ export function PackSummary({ packName, tracks, assignments, songs, problems, on
                   <button type="button" className="link-button" onClick={() => onTrack(p.track.file)}>
                     {p.track.name}
                   </button>
-                  : {p.kind === 'missing-song' ? 'its song was removed' : 'its lap 3 song was removed'}
+                  : {p.kind === 'missing-song' ? 'its song was removed' : 'its last lap song was removed'}
                 </li>
               ),
             )}

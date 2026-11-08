@@ -155,7 +155,7 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
             {single.playsOnce ? ' · plays once' : ''}
           </small>
         ) : (
-          <small>Changes apply to every selected track.</small>
+          <small>Changes here apply to all of them.</small>
         )}
         {single?.about ? <p className="note">{single.about}</p> : null}
       </header>
@@ -166,10 +166,10 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
           <Row label="Song">
             <Select label="Song" value={songValue} options={songOptions} onChange={v => v !== 'mixed' && setSong(v)} />
           </Row>
-          {missingSong ? <p className="warn">This track’s song was removed from your library. Pick another.</p> : null}
+          {missingSong ? <p className="warn">This track’s song was removed from your songs. Pick another.</p> : null}
           {first ? (
             <>
-              <Row label="Speed" hint={`${MIN_SPEED.toFixed(2)}x to ${MAX_SPEED.toFixed(2)}x`}>
+              <Row label="Speed" hint={`1.00x is normal. ${MIN_SPEED.toFixed(2)}x to ${MAX_SPEED.toFixed(2)}x`}>
                 <div className="speed">
                   <input
                     type="range"
@@ -194,10 +194,10 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
                   </button>
                 </div>
               </Row>
-              <Row label="Keep pitch" hint={first.keepPitch ? 'Faster or slower, same notes' : 'Pitch moves with speed (nightcore / slowed)'}>
+              <Row label="Keep pitch" hint={first.keepPitch ? 'Speed changes, the notes sound the same' : 'Faster sounds higher, slower sounds deeper'}>
                 <Toggle label="Keep pitch" checked={first.keepPitch} onChange={v => setAll({ keepPitch: v }, 'pitch')} />
               </Row>
-              <Row label="Volume" hint="Baked into the file. Never clips.">
+              <Row label="Volume" hint="Louder or quieter than the song is now">
                 <Slider label="Volume" value={first.volumeDb} min={-12} max={12} step={1} unit=" dB" onChange={v => setAll({ volumeDb: v }, 'volume')} />
               </Row>
               {single && song && loops ? (
@@ -216,13 +216,13 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
               {hasLaps ? (
                 <>
                   <h3 className="inspector-section">Last lap</h3>
-                  <Row label="Lap 3 song" hint={finalValue === SAME ? 'Keeps playing the same song' : 'Switches song for the final lap'}>
-                    <Select label="Lap 3 song" value={finalValue} options={finalOptions} onChange={v => v !== 'mixed' && setFinalSong(v)} />
+                  <Row label="Last lap song" hint={finalValue === SAME ? 'The same song keeps playing, a bit faster' : 'Switches to this song on the last lap'}>
+                    <Select label="Last lap song" value={finalValue} options={finalOptions} onChange={v => v !== 'mixed' && setFinalSong(v)} />
                   </Row>
-                  {first.finalSongId && !finalSong ? <p className="warn">The lap 3 song was removed from your library, so lap 3 plays the main song.</p> : null}
-                  <Row label="Lap 3 speed" hint="Faster and higher, as the game does">
+                  {first.finalSongId && !finalSong ? <p className="warn">The last lap song was removed from your songs, so the last lap plays the main song.</p> : null}
+                  <Row label="Last lap speed" hint="How much faster the last lap plays">
                     <Select
-                      label="Lap 3 speed"
+                      label="Last lap speed"
                       value={String(first.finalSpeed)}
                       options={FINAL_SPEED_CHOICES.map(([speed, text]) => [String(speed), text] as [string, string])}
                       onChange={v => setAll({ finalSpeed: Number(v) }, 'final')}
@@ -285,14 +285,14 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
                 onClick={() =>
                   playingLap3
                     ? preview.pause()
-                    : void preview.play(lap3Key, finalSong?.id ?? first.songId, `${single.name} · lap 3`, lap3Preview(first))
+                    : void preview.play(lap3Key, finalSong?.id ?? first.songId, `${single.name} · last lap`, lap3Preview(first))
                 }
               >
-                {playingLap3 ? 'Pause lap 3' : 'Hear lap 3'}
+                {playingLap3 ? 'Stop last lap' : 'Hear last lap'}
               </button>
             ) : null}
             <button className="button" type="button" disabled={busy} onClick={() => onDownload(single)}>
-              Download this track
+              Download just this track
             </button>
           </>
         ) : null}
@@ -310,8 +310,8 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
       {single && first && song ? (
         <p className="note">
           {first.loop
-            ? `Plays ${formatDuration(first.loop.end / first.speed)}, then loops the last ${formatDuration((first.loop.end - first.loop.start) / first.speed)}.`
-            : `Plays for ${formatDuration(song.duration / first.speed)}, then loops from the start.`}
+            ? `Plays ${formatDuration(first.loop.end / first.speed)}, then repeats the last ${formatDuration((first.loop.end - first.loop.start) / first.speed)}.`
+            : `Plays ${formatDuration(song.duration / first.speed)}, then starts again from the beginning.`}
         </p>
       ) : null}
     </div>

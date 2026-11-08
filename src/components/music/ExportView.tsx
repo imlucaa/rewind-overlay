@@ -32,15 +32,15 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
   return (
     <div className="music-view">
       <div className="rows">
-        <Row label="Pack name" hint="The zip's name">
+        <Row label="Pack name" hint="Name of the download">
           <TextField label="Pack name" placeholder="My music pack" value={packName} onChange={onRename} />
         </Row>
-        <Row label="Playing on" hint="Changes the install steps (and the README in the zip)">
+        <Row label="Playing on" hint="Where you play Retro Rewind">
           <Select label="Playing on" value={target} options={TARGETS} onChange={onTarget} />
         </Row>
-        <Row label="In the pack" hint="Final lap files are added where Retro Rewind has its own">
+        <Row label="In the pack" hint="Last lap files are added for you">
           <span className="figure">
-            {trackCount} track{trackCount === 1 ? '' : 's'} · {fileCount} file{fileCount === 1 ? '' : 's'} · {songCount} song{songCount === 1 ? '' : 's'} to encode
+            {trackCount} track{trackCount === 1 ? '' : 's'} · {fileCount} file{fileCount === 1 ? '' : 's'} · {songCount} song{songCount === 1 ? '' : 's'} to convert
           </span>
         </Row>
       </div>
@@ -89,14 +89,14 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
         <li>No change in game? Check Retro Rewind’s Music setting isn’t off and Loose Archive Overrides is on (it is by default).</li>
       </ol>
 
-      <h2 className="sub">Assignments file</h2>
-      <p className="note">Saves which song goes on which track, to back up or open in another browser. The songs themselves stay here.</p>
+      <h2 className="sub">Back up your choices</h2>
+      <p className="note">Saves which song is on which track, so you can open it later or in another browser. It doesn’t save the songs themselves.</p>
       <div className="inspector-actions">
         <button className="button" type="button" onClick={onSaveFile}>
-          Save assignments
+          Save backup
         </button>
         <button className="button" type="button" onClick={() => load.current?.click()}>
-          Load assignments
+          Open backup
         </button>
         <input
           ref={load}
@@ -115,7 +115,7 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
           }}
         />
         <button className="link-button danger" type="button" onClick={onResetAll}>
-          Reset all assignments
+          Clear all tracks
         </button>
       </div>
       <p className="note" role="status">

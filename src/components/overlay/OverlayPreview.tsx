@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 
 // The overlay lays out at least FRAME px wide, then is scaled down to the stage, so the card always fits.
 const FRAME = 760;
@@ -11,10 +11,22 @@ interface Props {
   emptyMessage: string;
   /** While set, the overlay acts out a race result with this change every few seconds. */
   playGain: { gain: number; ms: number; everyMs: number } | null;
+  /** Filled with a function that acts out one race result now (the Test race button). */
+  playRef?: RefObject<((gain: number, ms: number) => void) | null>;
+  /** What's behind the overlay in the preview. */
+  backdrop?: Backdrop;
 }
 
+export type Backdrop = 'grid' | 'black' | 'white' | 'green';
+export const BACKDROPS: readonly (readonly [Backdrop, string])[] = [
+  ['grid', 'Grid'],
+  ['black', 'Black'],
+  ['white', 'White'],
+  ['green', 'Green screen'],
+];
+
 /** The real overlay in a frame, as OBS will show it. */
-export function OverlayPreview({ url, emptyMessage, playGain }: Props) {
+export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop = 'grid' }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [src, setSrc] = useState('about:blank');
@@ -40,6 +52,14 @@ export function OverlayPreview({ url, emptyMessage, playGain }: Props) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!playRef) return;
+    playRef.current = (gain, ms) => frame.current?.contentWindow?.postMessage({ ww: 'play-gain', gain, ms }, '*');
+    return () => {
+      playRef.current = null;
+    };
+  }, [playRef]);
+
   const gain = playGain?.gain;
   const ms = playGain?.ms;
   const everyMs = playGain?.everyMs;
@@ -52,7 +72,7 @@ export function OverlayPreview({ url, emptyMessage, playGain }: Props) {
   }, [gain, ms, everyMs, src]);
 
   return (
-    <div className="stage" ref={stage}>
+    <div className="stage" ref={stage} data-backdrop={backdrop}>
       <iframe ref={frame} src={src} title="Overlay preview" />
       {url ? null : <p className="stage-empty">{emptyMessage}</p>}
     </div>

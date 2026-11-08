@@ -170,6 +170,7 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
 
   return (
     <div className="loop-editor">
+      <p className="note">When the song reaches the end line it jumps back to the start line. Drag the white lines, or press Find loop.</p>
       <canvas
         ref={canvas}
         className="loop-wave"
@@ -220,14 +221,14 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
         <button className="button" type="button" disabled={finding} onClick={() => void findLoops()}>
           {finding ? 'Finding…' : 'Find loop'}
         </button>
-        <button className="button" type="button" disabled={!loop} onClick={snapEnd} title="Nudge the end (up to 50 ms) to where the music lines up with the start">
-          Snap end
+        <button className="button" type="button" disabled={!loop} onClick={snapEnd} title="Moves the end line a tiny bit so the jump back sounds smooth">
+          Smooth the jump
         </button>
         <button className="button" type="button" onClick={() => onHearJump(shown)}>
-          Hear the jump
+          Hear the jump back
         </button>
         <button className="link-button" type="button" disabled={!loop} onClick={() => onChange(null)}>
-          Whole song
+          Repeat whole song
         </button>
       </div>
       {candidates.length > 1 ? (
@@ -240,7 +241,7 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
                   <span>
                     {formatTime(c.start)} → {formatTime(c.end)}
                   </span>
-                  <small>{Math.round(c.score * 100)}% match</small>
+                  <small>{Math.round(c.score * 100)}% smooth</small>
                 </button>
               </li>
             );

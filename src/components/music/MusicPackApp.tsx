@@ -147,6 +147,7 @@ export function MusicPackApp({ tracks }: Props) {
   return (
     <AppShell
       className="music"
+      viewKey={view}
       tabsLabel="Music pack"
       tabs={VIEWS.map(([v, label]) => (
         <Tab key={v} current={view === v} onSelect={() => setView(v)}>
@@ -262,10 +263,10 @@ export function MusicPackApp({ tracks }: Props) {
               result.missing ? `${result.missing} whose song isn’t in this library` : '',
               result.unknownTracks ? `${result.unknownTracks} for tracks Retro Rewind doesn’t have` : '',
             ].filter(Boolean);
-            return `Loaded ${count} assignment${count === 1 ? '' : 's'}.` + (skipped.length ? ` Skipped ${skipped.join(' and ')}.` : '');
+            return `Loaded songs for ${count} track${count === 1 ? '' : 's'}.` + (skipped.length ? ` Skipped ${skipped.join(' and ')}.` : '');
           }}
           onResetAll={() => {
-            if (window.confirm('Put every track back to its original music? Undo can bring it back.'))
+            if (window.confirm('Put every track back to its original music? You can press Undo to get them back.'))
               update(p => ({ ...p, assignments: {} }));
           }}
         />

@@ -100,7 +100,7 @@ export function TracksView({ tracks, assignments, songs, query, filter, selected
                           <i aria-hidden="true" />
                           {song ? song.title : 'Song removed'}
                           {a.speed !== 1 ? <em>{formatSpeed(a.speed)}</em> : null}
-                          {a.finalSongId ? <em>· lap 3: {songs.get(a.finalSongId)?.title ?? 'removed'}</em> : null}
+                          {a.finalSongId ? <em>· last lap: {songs.get(a.finalSongId)?.title ?? 'removed'}</em> : null}
                         </span>
                       ) : (
                         <span className="track-song original">Original music</span>

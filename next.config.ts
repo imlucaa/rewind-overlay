@@ -10,6 +10,8 @@ const config: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  // The dev-only Next.js badge sat on top of the sidebar's Site look button.
+  devIndicators: { position: 'bottom-right' },
 };
 
 export default config;

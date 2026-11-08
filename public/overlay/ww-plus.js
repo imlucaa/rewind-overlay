@@ -45,6 +45,13 @@
       '.rank-chip,.connection,.context-line>span{background:none!important;border:0!important;box-shadow:none!important}',
       '.connection>i{display:none!important}',
     );
+  // Race HUD: the session change (the only context it keeps) sits under the VR and rank, right-aligned, not off to the left.
+  if (q.get('vrhud') === '1')
+    css.push(
+      '.card-content{flex-direction:column!important;align-items:flex-end!important;justify-content:center!important;gap:2px!important}',
+      '.identity-block{order:2}.context-line{margin-top:0!important;width:auto!important;justify-content:flex-end!important}',
+      '.context-line span{font-size:12px!important}',
+    );
   // Slim (look=slim): a thin pill, plain big number, the name small; the flag sits above the name and, for MMR, the
   // division takes the place of the "MMR" label.
   const slim = q.get('look') === 'slim';
@@ -135,14 +142,17 @@
     };
     ctl.emitChange();
     setTimeout(() => {
-      const root = document.getElementById('root') || document.body;
-      root.style.transition = 'opacity .2s';
-      root.style.opacity = '0';
+      // The drawn layer (badge, game digits) fades with the card, or the badge is left alone on screen for a moment.
+      const faded = [document.getElementById('root') || document.body, document.getElementById('ww-layer')].filter(Boolean);
+      for (const el of faded) {
+        el.style.transition = 'opacity .2s';
+        el.style.opacity = '0';
+      }
       setTimeout(() => {
         ctl.engine.player = saved;
         ctl.emitChange();
         setTimeout(() => {
-          root.style.opacity = '';
+          for (const el of faded) el.style.opacity = '';
           ctl.busy = false;
           carding = false;
         }, 350);
@@ -422,6 +432,8 @@
 
   const textFont = q.get('text') === 'hud';
   const raceCount = q.get('vrhud') === '1';
+  // vk=on: the change stays beside the number until the next one, instead of counting into it and going.
+  const keepChange = raceCount && q.get('vk') === 'on';
   const badgeSize = Math.min(300, Math.max(30, parseFloat(q.get('bs')) || 100)) / 100;
   const badgeGap = Math.min(100, Math.max(0, parseFloat(q.get('bg') ?? '15'))) / 100;
   const ro = hex(q.get('ro'));
@@ -432,6 +444,80 @@
           .map(([x, y]) => `drop-shadow(${x * h}px ${y * h}px 0 ${ro})`)
           .join(' ')
       : 'none';
+  // Badge outline: the badge's own shape, grown evenly and filled with the colour, under the badge (like the white edge
+  // of the Mario Kart World badges). Shadow tricks leave lumps at the corners; this stays smooth. rw sets how thick it
+  // is. Made once per badge; null if the picture can't be read (another site without CORS).
+  const outlinedBadges = new Map();
+  const outlinedBadge = src => {
+    if (!outlinedBadges.has(src))
+      outlinedBadges.set(
+        src,
+        new Promise((resolve, reject) => {
+          const image = new Image();
+          image.crossOrigin = 'anonymous';
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = src;
+        })
+          .then(image => {
+            const scale = Math.max(1, 256 / image.height);
+            const w = Math.round(image.width * scale);
+            const h = Math.round(image.height * scale);
+            // 0.5 still shows (about 1.5% of the height); 2 is about 3%, like the Lounge badges' own edge.
+            const r = h * 0.01 * (1 + rw);
+            const pad = Math.ceil(r) + 2;
+            // The badge, with its dark outer frame taken off (the Retro Rewind ones have one): dark pixels reached from
+            // outside without crossing a coloured one. The ring's colour then meets the outline, as on the Lounge badges.
+            const art = document.createElement('canvas');
+            art.width = w;
+            art.height = h;
+            const actx = art.getContext('2d', { willReadFrequently: true });
+            actx.imageSmoothingQuality = 'high';
+            actx.drawImage(image, 0, 0, w, h);
+            const pixels = actx.getImageData(0, 0, w, h);
+            const px = pixels.data;
+            const open = i => px[i * 4 + 3] < 128 || Math.max(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]) < 60;
+            const seen = new Uint8Array(w * h);
+            const todo = [];
+            for (let x = 0; x < w; x++) todo.push(x, (h - 1) * w + x);
+            for (let y = 0; y < h; y++) todo.push(y * w, y * w + w - 1);
+            while (todo.length) {
+              const i = todo.pop();
+              if (seen[i] || !open(i)) continue;
+              seen[i] = 1;
+              const x = i % w;
+              if (x > 0) todo.push(i - 1);
+              if (x < w - 1) todo.push(i + 1);
+              if (i >= w) todo.push(i - w);
+              if (i < w * (h - 1)) todo.push(i + w);
+            }
+            for (let i = 0; i < w * h; i++) if (seen[i]) px[i * 4 + 3] = 0;
+            actx.putImageData(pixels, 0, 0);
+            const shape = document.createElement('canvas');
+            shape.width = w;
+            shape.height = h;
+            const sctx = shape.getContext('2d');
+            sctx.drawImage(art, 0, 0);
+            sctx.globalCompositeOperation = 'source-in';
+            sctx.fillStyle = ro;
+            sctx.fillRect(0, 0, w, h);
+            const canvas = document.createElement('canvas');
+            canvas.width = w + pad * 2;
+            canvas.height = h + pad * 2;
+            const ctx = canvas.getContext('2d');
+            for (let ring = 1; ring <= 4; ring++)
+              for (let a = 0; a < 48; a++) {
+                const d = (r * ring) / 4;
+                const t = (a / 48) * Math.PI * 2;
+                ctx.drawImage(shape, pad + Math.cos(t) * d, pad + Math.sin(t) * d);
+              }
+            ctx.drawImage(art, pad, pad);
+            return { url: canvas.toDataURL(), grow: canvas.height / h };
+          })
+          .catch(() => null),
+      );
+    return outlinedBadges.get(src);
+  };
   const specialty = ['tester', 'donor', 'translator', 'discord-staff', 'contributor', 'major-contributor', 'wfc-staff', 'developer'];
   const ranks = [[100000, 'crown'], [94000, '3star'], [84000, '2star'], [72000, 'star'], [60000, 'a'], [48000, 'b'], [36000, 'c'], [24000, 'd'], [0, 'e']];
   const mkwBadges = ['iron', 'copper', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'ruby', 'diamond', 'master', 'grandmaster'].map(d => 'mkw-' + d);
@@ -480,6 +566,10 @@
           if (lastDelta === null) vrStart = vrNow - delta;
           else if (text !== lastDelta) vrStart = vrNow;
           lastDelta = text;
+          if (keepChange) {
+            if (delta) list.push({ el, kind: 'delta', text: (delta > 0 ? '+' : '') + delta });
+            continue;
+          }
           const left = delta - (vrNow - vrStart);
           // More left than the change itself: the number jumped (the page loading), so it counts as done.
           if (Math.abs(left) > Math.abs(delta)) {
@@ -495,7 +585,8 @@
       // MMR: the page has no change to show, so the one seen in the shim counts down beside the number.
       if (raceCount && mmr && mmrChange && vrEl && !list.some(t => t.kind === 'delta')) {
         const left = mmrChange.delta - (vrNow - mmrChange.from);
-        if (left !== 0 && Math.sign(left) === Math.sign(mmrChange.delta) && Math.abs(left) <= Math.abs(mmrChange.delta))
+        if (keepChange) list.push({ el: vrEl, kind: 'side', text: (mmrChange.delta > 0 ? '+' : '') + mmrChange.delta });
+        else if (left !== 0 && Math.sign(left) === Math.sign(mmrChange.delta) && Math.abs(left) <= Math.abs(mmrChange.delta))
           list.push({ el: vrEl, kind: 'side', text: (left > 0 ? '+' : '') + left });
         else if (vrNow === mmrChange.from + mmrChange.delta) mmrChange = null;
       }
@@ -504,12 +595,13 @@
         const t = (performance.now() - play.at) / 1000;
         const q = Math.min(1, Math.max(0, (t - 1) / 1.2));
         const added = Math.round(play.gain * q);
-        if (t > 2.6) play = null;
+        // Keeping the change: the pretend one stays (whole) until the next, like a real race would.
+        if (t > 2.6 && !keepChange) play = null;
         else {
-          for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === 'delta') list.splice(i, 1);
+          for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === 'delta' || list[i].kind === 'side') list.splice(i, 1);
           const vr = list.find(i => i.kind === 'vr');
           if (vr) vr.text = String(vrNow - play.gain + added);
-          const left = play.gain - added;
+          const left = keepChange ? play.gain : play.gain - added;
           if (left) list.push({ el: vrEl, kind: 'side', text: (left > 0 ? '+' : '') + left });
         }
       }
@@ -563,8 +655,23 @@
               : mmr ? lounge.info?.icon : base + 'ranks/' + ranks.find(t => value >= t[0])[1] + '.webp';
             if (src) {
               const badge = document.createElement('img');
-              badge.src = src;
-              badge.style.cssText = `height:${h * 0.9 * badgeSize}px;width:auto;margin-right:${fontHere ? h * badgeGap : 0}px;filter:${outline(Math.max(0.5, h * 0.006 * rw))}`;
+              const size = h * 0.9 * badgeSize;
+              const gap = fontHere ? h * badgeGap : 0;
+              badge.style.cssText = `height:${size}px;width:auto;margin-right:${gap}px`;
+              if (ro)
+                // The outline is drawn outside the badge: the picture grows by it and negative margins keep the badge
+                // itself (and the gap to the number) where it was.
+                outlinedBadge(src).then(done => {
+                  if (!done) {
+                    badge.style.filter = outline(Math.max(0.5, h * 0.006 * rw));
+                    badge.src = src;
+                    return;
+                  }
+                  const edge = (size * (done.grow - 1)) / 2;
+                  badge.style.cssText = `height:${size * done.grow}px;width:auto;margin:${-edge}px ${gap - edge}px ${-edge}px ${-edge}px`;
+                  badge.src = done.url;
+                });
+              else badge.src = src;
               box.appendChild(badge);
             }
           }
