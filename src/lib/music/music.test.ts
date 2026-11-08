@@ -97,7 +97,7 @@ test('lap 3 song: the final lap file is made from the other song, at the final l
   assert.ok(!jobs.some(j => j.song.id === 'main' && j.files.some(f => f.name === '0_Final.brstm')));
 });
 
-test('menus and fanfares: in Patches under the game’s names, no final lap, jingles play once', () => {
+test('menus and fanfares: under the game’s names, no final lap, jingles play once', () => {
   const title = list.tracks.find(t => t.file === 'title_bg')!;
   const jingle = list.tracks.find(t => t.file === 'o_FanfareGP1_only32')!;
   const results = list.tracks.find(t => t.file === 'o_FanfareGP1_32')!;

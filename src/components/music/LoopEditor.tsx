@@ -170,7 +170,7 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
 
   return (
     <div className="loop-editor">
-      <p className="note">When the song reaches the end line it jumps back to the start line. Drag the white lines, or press Find loop.</p>
+      <p className="note explain">When the song reaches the end line it jumps back to the start line. Drag the white lines, or press Find loop.</p>
       <canvas
         ref={canvas}
         className="loop-wave"

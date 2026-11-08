@@ -1067,3 +1067,141 @@ html[data-intro="slide"] .app .nav > :nth-child(n + 5) { animation-delay: 300ms;
     grid-area: tabs;
   }
 }
+
+/* ---------- Compact (its own button above Site look) ---------- */
+.site-look-state {
+  margin-left: auto;
+  color: var(--soft);
+  font-size: 12px;
+}
+
+.site-look-button[aria-pressed="true"] {
+  color: var(--text);
+}
+
+.site-look-button[aria-pressed="true"] .site-look-state {
+  color: var(--accent);
+}
+
+@media (max-width: 1180px) {
+  .site-look {
+    display: flex;
+    gap: 4px;
+  }
+
+  .site-look-state {
+    display: none;
+  }
+}
+
+:root[data-compact] .label small,
+:root[data-compact] .explain,
+:root[data-compact] .summary-next,
+:root[data-compact] .quick-songs > .note,
+:root[data-compact] .inspector header .note {
+  display: none;
+}
+
+:root[data-compact] .row {
+  min-height: 38px;
+  padding: 5px 12px;
+}
+
+:root[data-compact] .label strong {
+  font-size: 13px;
+}
+
+:root[data-compact] .panel {
+  padding: 14px 18px 28px;
+}
+
+:root[data-compact] .preview-inner {
+  padding: 14px 18px;
+  gap: 8px;
+}
+
+:root[data-compact] .topbar {
+  min-height: 0;
+}
+
+:root[data-compact] .app {
+  grid-template-rows: 48px 1fr;
+}
+
+:root[data-compact] .nav button {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+:root[data-compact] .inspector-section {
+  padding-top: 10px;
+  padding-bottom: 4px;
+}
+
+/* lists, buttons and the track panel */
+:root[data-compact] .track-main {
+  min-height: 32px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+:root[data-compact] .song {
+  min-height: 38px;
+  padding: 4px 12px;
+}
+
+:root[data-compact] .track-group h2 {
+  margin: 0 2px 4px;
+  font-size: 13px;
+}
+
+:root[data-compact] .music-view {
+  gap: 10px;
+}
+
+:root[data-compact] .chips button {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+:root[data-compact] .button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+:root[data-compact] .track-picker-button {
+  height: 26px;
+}
+
+:root[data-compact] input[type="text"],
+:root[data-compact] input[type="number"],
+:root[data-compact] input[type="search"],
+:root[data-compact] select {
+  height: 28px;
+}
+
+:root[data-compact] .inspector header h2 {
+  font-size: 14px;
+}
+
+:root[data-compact] .loop-wave {
+  height: 56px !important;
+}
+
+:root[data-compact] .rows {
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  :root[data-compact] .app {
+    grid-template-rows: 48px auto 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  :root[data-compact] .app {
+    grid-template-rows: 48px auto auto 1fr;
+  }
+}

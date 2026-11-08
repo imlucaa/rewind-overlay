@@ -29,6 +29,8 @@ export interface SiteTheme {
   fontFileName: string;
   /** How the site appears when it opens. */
   intro: IntroName;
+  /** Less space: tighter rows, hints only on hover. */
+  compact: boolean;
 }
 
 export const THEMES: readonly (readonly [ThemeName, string])[] = [
@@ -108,7 +110,7 @@ export const FONTS: readonly (readonly [FontChoice, string])[] = [
 export const MAX_FONT_BYTES = 1.5 * 1024 * 1024;
 
 export const defaultTheme = (): SiteTheme => ({
-  theme: 'dark', custom: { ...DEFAULT_CUSTOM }, vars: customVars(DEFAULT_CUSTOM), accent: null, font: 'general', googleFont: '', fontFile: '', fontFileName: '', intro: 'zoom',
+  theme: 'dark', custom: { ...DEFAULT_CUSTOM }, vars: customVars(DEFAULT_CUSTOM), accent: null, font: 'general', googleFont: '', fontFile: '', fontFileName: '', intro: 'zoom', compact: false,
 });
 
 export function parseTheme(text: string | null): SiteTheme {
@@ -132,6 +134,7 @@ export function parseTheme(text: string | null): SiteTheme {
     if (typeof raw.fontFile === 'string' && raw.fontFile.startsWith('data:')) out.fontFile = raw.fontFile;
     if (typeof raw.fontFileName === 'string') out.fontFileName = raw.fontFileName.slice(0, 120);
     if (INTROS.some(([i]) => i === raw.intro)) out.intro = raw.intro;
+    out.compact = raw.compact === true;
   } catch {
     // damaged: the default look
   }
@@ -145,6 +148,8 @@ export function parseTheme(text: string | null): SiteTheme {
 export function applyTheme(t: SiteTheme): void {
   const root = document.documentElement;
   root.dataset.theme = t.theme;
+  if (t.compact) root.dataset.compact = '';
+  else delete root.dataset.compact;
   for (const [name, value] of Object.entries(t.vars ?? {})) {
     if (t.theme === 'custom') root.style.setProperty(name, value);
     else root.style.removeProperty(name);
@@ -187,4 +192,4 @@ export function applyTheme(t: SiteTheme): void {
  * Runs in the page head, before anything draws: the saved theme, accent and font family. Font files and Google
  * Fonts load once the page script runs applyTheme. Kept tiny and hand-written, as it's inlined as text.
  */
-export const themeBootScript = `try{var t=JSON.parse(localStorage.getItem(${JSON.stringify(THEME_KEY)})||"{}"),r=document.documentElement;if(/^(light|midnight|grape|custom)$/.test(t.theme))r.dataset.theme=t.theme;if(t.theme==="custom"&&t.vars)for(var k in t.vars){var v=String(t.vars[k]);if(/^(--[a-z-]+|color-scheme)$/.test(k)&&/^(#[0-9a-f]{6}|light|dark)$/i.test(v))r.style.setProperty(k,v)}if(/^#[0-9a-f]{6}$/i.test(t.accent||"")){var n=parseInt(t.accent.slice(1),16);r.style.setProperty("--accent",t.accent);r.style.setProperty("--accent-ink",.299*(n>>16)+.587*(n>>8&255)+.114*(n&255)>150?"#0a0a0b":"#ffffff")}var f=t.font==="inter"?"Inter":t.font==="google"?String(t.googleFont||"").trim():t.font==="file"&&t.fontFile?"Site custom font":"";if(t.font==="system")r.style.setProperty("--font","system-ui, sans-serif");else if(f)r.style.setProperty("--font",'"'+f.replace(/"/g,"")+'", "General Sans", system-ui, sans-serif');var i=/^(slide|reveal|fade|off)$/.test(t.intro)?t.intro:"zoom";if(i!=="off"){r.dataset.intro=i;setTimeout(function(){delete r.dataset.intro},${INTRO_MS})}}catch(e){}`;
+export const themeBootScript = `try{var t=JSON.parse(localStorage.getItem(${JSON.stringify(THEME_KEY)})||"{}"),r=document.documentElement;if(t.compact===true)r.dataset.compact="";if(/^(light|midnight|grape|custom)$/.test(t.theme))r.dataset.theme=t.theme;if(t.theme==="custom"&&t.vars)for(var k in t.vars){var v=String(t.vars[k]);if(/^(--[a-z-]+|color-scheme)$/.test(k)&&/^(#[0-9a-f]{6}|light|dark)$/i.test(v))r.style.setProperty(k,v)}if(/^#[0-9a-f]{6}$/i.test(t.accent||"")){var n=parseInt(t.accent.slice(1),16);r.style.setProperty("--accent",t.accent);r.style.setProperty("--accent-ink",.299*(n>>16)+.587*(n>>8&255)+.114*(n&255)>150?"#0a0a0b":"#ffffff")}var f=t.font==="inter"?"Inter":t.font==="google"?String(t.googleFont||"").trim():t.font==="file"&&t.fontFile?"Site custom font":"";if(t.font==="system")r.style.setProperty("--font","system-ui, sans-serif");else if(f)r.style.setProperty("--font",'"'+f.replace(/"/g,"")+'", "General Sans", system-ui, sans-serif');var i=/^(slide|reveal|fade|off)$/.test(t.intro)?t.intro:"zoom";if(i!=="off"){r.dataset.intro=i;setTimeout(function(){delete r.dataset.intro},${INTRO_MS})}}catch(e){}`;

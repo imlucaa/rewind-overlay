@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { DOLPHIN_FOLDER, TARGETS, WHEEL_WIZARD_FOLDER, type Problem, type Target } from '@/lib/music/pack';
+import { TARGETS, type Problem, type Target } from '@/lib/music/pack';
 import { formatDuration } from '@/lib/music/format';
 import type { ExportStatus } from '@/hooks/useExport';
 import { Row, Select, TextField } from '@/components/ui/controls';
@@ -100,23 +100,48 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
 
       <h2 className="sub">How to install</h2>
       <ol className="steps">
-        <li>
-          {target === 'wii' ? (
-            <>Unzip it. Copy the <code>RetroRewind6</code> folder to the root of your SD card. Say yes to replacing files.</>
-          ) : (
-            <>
-              Unzip it. Copy the <code>RetroRewind6</code> folder into <code>{WHEEL_WIZARD_FOLDER}</code> if you play through Wheel
-              Wizard, otherwise into <code>{DOLPHIN_FOLDER}</code> (the one that already has a <code>RetroRewind6</code>). Say yes to
-              replacing files. In Dolphin, File › Open User Folder opens the <code>Dolphin Emulator</code> folder.
-            </>
-          )}
-        </li>
-        <li>The songs land in <code>RetroRewind6/Patches</code>, which Retro Rewind loads over its own music.</li>
-        <li>No change in game? Check Retro Rewind’s Music setting isn’t off and Loose Archive Overrides is on (it is by default).</li>
+        {target === 'wheelwizard' ? (
+          <>
+            <li>In Wheel Wizard, open Patches.</li>
+            <li>Click the arrow next to Browse, then Import, and pick the downloaded .zip. Give it a name.</li>
+            <li>Make sure it’s switched on, then launch Retro Rewind.</li>
+          </>
+        ) : target === 'wii' ? (
+          <>
+            <li>Unzip the download.</li>
+            <li>Copy the <code>RetroRewind6</code> folder to the top of your SD card. When it asks, choose Replace.</li>
+            <li>Start Retro Rewind.</li>
+          </>
+        ) : (
+          <>
+            <li>Unzip the download.</li>
+            <li>In Dolphin, click File › Open User Folder.</li>
+            <li>
+              Copy the <code>RetroRewind6</code> folder into <code>Load/Riivolution</code>. When it asks, choose Replace.
+            </li>
+            <li>Start Retro Rewind.</li>
+          </>
+        )}
       </ol>
+      <p className="install-path">
+        <span>{target === 'wheelwizard' ? 'Wheel Wizard copies your songs into' : 'Your songs end up in'}</span>
+        <code>
+          {target === 'wii'
+            ? 'SD card/RetroRewind6/Patches'
+            : target === 'wheelwizard'
+              ? 'Dolphin Emulator/Load/Riivolution/WheelWizard/RetroRewind6/Patches'
+              : 'Dolphin Emulator/Load/Riivolution/RetroRewind6/Patches'}
+        </code>
+        <small>
+          {target === 'wheelwizard'
+            ? 'They play instead of those tracks’ music. To undo, switch the pack off in Wheel Wizard.'
+            : 'They play instead of those tracks’ music. To undo, delete them from Patches.'}{' '}
+          Still the old music? Check Music is on in Retro Rewind’s settings.
+        </small>
+      </p>
 
       <h2 className="sub">Back up your choices</h2>
-      <p className="note">
+      <p className="note explain">
         Saves which song is on which track, so you can open it later or in another browser. A share link does the same for someone
         else. Neither has the songs themselves: the other person needs the same song files.
       </p>

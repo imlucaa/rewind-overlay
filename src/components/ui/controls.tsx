@@ -13,7 +13,7 @@ interface RowProps {
 export function Row({ label, hint, children }: RowProps) {
   return (
     <div className="row">
-      <div className="label">
+      <div className="label" title={hint}>
         <strong>{label}</strong>
         {hint ? <small>{hint}</small> : null}
       </div>

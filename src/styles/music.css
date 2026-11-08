@@ -959,3 +959,29 @@ li[data-using="true"][aria-selected="true"] > .track-picker-row > small {
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* ---------- Export: where the files end up ---------- */
+.install-path {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.install-path > code {
+  color: var(--text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.install-path small {
+  color: var(--soft);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

@@ -63,6 +63,23 @@ export function SiteLook() {
 
   return (
     <div className="site-look" ref={root}>
+      <button
+        type="button"
+        className="site-look-button"
+        aria-pressed={theme.compact}
+        title="Less space. Hover an option’s name to see its hint."
+        onClick={() => set({ compact: !theme.compact })}
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          {theme.compact ? (
+            <path d="M2.5 5.5h11M2.5 8h11M2.5 10.5h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          ) : (
+            <path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          )}
+        </svg>
+        Compact
+        <span className="site-look-state">{theme.compact ? 'On' : 'Off'}</span>
+      </button>
       <button type="button" className="site-look-button" aria-expanded={open} onClick={() => setOpen(o => !o)}>
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
           <circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.4" />

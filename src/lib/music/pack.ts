@@ -2,9 +2,11 @@
 // settings, however many tracks share them), the files each one becomes, and what's wrong first.
 //
 // How Retro Rewind loads music (Pulsar engine, Retro Rewind 6.13.4; see tracks.ts):
-// - Each track plays <file>.brstm. Files in RetroRewind6/Patches replace the game's own when Retro Rewind's
-//   "Loose Archive Overrides" setting is on (the default). SD:/RetroRewind6/Patches on a Wii;
-//   <Dolphin>/Load/Riivolution/[WheelWizard/]RetroRewind6/Patches in Dolphin.
+// - Each track plays <file>.brstm. Retro Rewind's own music is in RetroRewind6/strm; files in RetroRewind6/Patches
+//   load over it (Pulsar's loose file overrides), so a pack goes in Patches and never overwrites Retro Rewind's
+//   files. SD:/RetroRewind6/Patches on a Wii; <Dolphin>/Load/Riivolution/RetroRewind6/Patches in Dolphin.
+// - Wheel Wizard manages Patches itself: at each launch it copies its enabled mods there (every file flattened to
+//   its name) and removes files that aren't from a mod. So Wheel Wizard players import the zip as a mod instead.
 // - On the final lap it plays the track's _Final/_F file if one exists, and otherwise plays the normal file
 //   6% faster. Where Retro Rewind ships its own final lap file, the pack writes one too (the same audio with a 6%
 //   faster sample rate in its header, which is exactly what the game would have done), or the old song would
@@ -30,7 +32,7 @@ export const MIN_SPEED = 0.5;
 export const MAX_SPEED = 2;
 /** Longer songs are a lot for the Wii to hold in memory; Music Pack Maker warns at the same length. */
 export const LONG_SONG_SECONDS = 10 * 60;
-export const PATCHES_FOLDER = 'RetroRewind6/Patches';
+export const MUSIC_FOLDER = 'RetroRewind6/Patches';
 
 export interface Assignment {
   songId: string;
@@ -158,34 +160,39 @@ export function planPack(tracks: readonly Track[], assignments: Assignments, son
 }
 
 /** Where the pack will be played. It decides the install steps, and the Wii's memory limit on long songs. */
-export type Target = 'wii' | 'dolphin';
+export type Target = 'wii' | 'wheelwizard' | 'dolphin';
 
 export const TARGETS: readonly (readonly [Target, string])[] = [
   ['wii', 'Wii (SD card)'],
-  ['dolphin', 'Dolphin'],
+  ['wheelwizard', 'Wheel Wizard'],
+  ['dolphin', 'Dolphin without Wheel Wizard'],
 ];
 
 /** Dolphin's Riivolution folder; Wheel Wizard keeps Retro Rewind one folder further in. */
 export const DOLPHIN_FOLDER = 'Dolphin Emulator/Load/Riivolution';
 export const WHEEL_WIZARD_FOLDER = DOLPHIN_FOLDER + '/WheelWizard';
 
+/** The zip's README (Wheel Wizard zips have none: Wheel Wizard would copy it into Patches). */
 export const readmeFor = (target: Target): string =>
   target === 'wii'
     ? `Retro Rewind music pack, made for Wii
 
-Copy the RetroRewind6 folder to the root of your SD card, and say yes if it asks to replace files.
-The songs end up in SD:/RetroRewind6/Patches.
+1. Copy the RetroRewind6 folder to the top of your SD card. When it asks, choose Replace.
+2. Start Retro Rewind.
+
+Your songs go in SD:/RetroRewind6/Patches and play instead of those tracks' music.
+To go back to Retro Rewind's own music, delete them from Patches.
 ${README_END}`
     : `Retro Rewind music pack, made for Dolphin
 
-Copy the RetroRewind6 folder into the folder that already has a RetroRewind6 in it, and say yes if it asks to
-replace files:
-- Playing through Wheel Wizard: ${WHEEL_WIZARD_FOLDER}
-- Otherwise: ${DOLPHIN_FOLDER}
-(In Dolphin, File > Open User Folder opens the Dolphin Emulator folder.)
+1. In Dolphin, click File > Open User Folder.
+2. Copy the RetroRewind6 folder into Load/Riivolution. When it asks, choose Replace.
+3. Start Retro Rewind.
+
+Your songs go in ${DOLPHIN_FOLDER}/RetroRewind6/Patches and play instead of those tracks' music.
+To go back to Retro Rewind's own music, delete them from Patches.
 ${README_END}`;
 
 const README_END = `
-No change in game? Check that Retro Rewind's Music setting isn't off and that Loose Archive Overrides is on.
-Removing the files from Patches brings back Retro Rewind's own music.
+Still the old music? Check Music is on in Retro Rewind's settings.
 `;

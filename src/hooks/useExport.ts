@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { songBlob } from '@/lib/music/library';
-import { PATCHES_FOLDER, SAMPLE_RATE, readmeFor, type EncodeJob, type Target } from '@/lib/music/pack';
+import { MUSIC_FOLDER, SAMPLE_RATE, readmeFor, type EncodeJob, type Target } from '@/lib/music/pack';
 import { ZipWriter } from '@/lib/music/zip';
 
 export type ExportStatus =
@@ -41,7 +41,7 @@ export function useExport() {
         );
         for (const file of job.files) {
           const data = file.rate === SAMPLE_RATE ? bytes : withSampleRate(bytes, file.rate);
-          zip.add(`${PATCHES_FOLDER}/${file.name}`, data);
+          zip.add(`${MUSIC_FOLDER}/${file.name}`, data);
           single = { name: file.name, data };
         }
       } catch (e) {
@@ -55,7 +55,8 @@ export function useExport() {
     const files = zip.size;
     if (files === 1 && !withReadme && single) download(new Blob([single.data as Uint8Array<ArrayBuffer>]), single.name);
     else {
-      if (withReadme) zip.add('README.txt', new TextEncoder().encode(readmeFor(target)));
+      // Wheel Wizard copies every file of a mod into Patches, so its zip has only the songs (the steps are on the site).
+      if (withReadme && target !== 'wheelwizard') zip.add('README.txt', new TextEncoder().encode(readmeFor(target)));
       download(zip.blob(), downloadName);
     }
     setStatus({ kind: 'finished', files, failed });

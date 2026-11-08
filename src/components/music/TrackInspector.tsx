@@ -243,7 +243,9 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
                     />
                   </Row>
                 </>
-              ) : null}
+              ) : (
+                <p className="note">Menus and fanfares have no last lap, so there’s no last lap song here. Pick a race track or battle arena for that.</p>
+              )}
             </>
           ) : null}
         </div>
