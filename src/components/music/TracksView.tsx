@@ -17,7 +17,7 @@ const FILTERS: readonly [TrackFilter, string][] = [
   ['menu', 'Menus'],
   ['fanfare', 'Fanfares'],
   ['custom-music', 'With your music'],
-  ['original-music', 'Original music'],
+  ['original-music', 'No song yet'],
 ];
 
 interface Props {
