@@ -10,9 +10,11 @@ export interface PackState {
   assignments: Assignments;
   /** Where it'll be played. Kept in this browser, not in the assignments file. */
   target: Target;
+  /** Also write the original game's file names for the 32 original tracks, for CTGP. Kept in this browser. */
+  originalNames: boolean;
 }
 
-export const emptyPack = (): PackState => ({ packName: 'My music pack', assignments: {}, target: 'wii' });
+export const emptyPack = (): PackState => ({ packName: 'My music pack', assignments: {}, target: 'wii', originalNames: false });
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -55,6 +57,7 @@ export function parsePack(text: string | null): PackState {
       packName: typeof raw.packName === 'string' && raw.packName.trim() ? raw.packName : emptyPack().packName,
       assignments: readAssignments(raw.assignments),
       // the Dolphin and Wheel Wizard choices were merged into one
+      originalNames: raw.originalNames === true || raw.target === 'ctgp',
       target: raw.target === 'dolphin-ww' || raw.target === 'wheelwizard' ? 'dolphin' : TARGETS.some(([t]) => t === raw.target) ? (raw.target as Target) : 'wii',
     };
   } catch {
@@ -87,7 +90,7 @@ export function packToFile(pack: PackState, songs: readonly SongInfo[]): string 
 }
 
 export interface PackImport {
-  pack: Omit<PackState, 'target'>;
+  pack: Omit<PackState, 'target' | 'originalNames'>;
   /** Assignments dropped because their song isn't in this library. */
   missing: number;
   /** Assignments dropped because Retro Rewind has no such track. */

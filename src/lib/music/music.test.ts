@@ -118,16 +118,22 @@ test('menus and fanfares: under the game’s names, no final lap, jingles play o
   assert.ok(jobs.some(j => !j.assignment.playsOnce && j.files[0].name === 'o_FanfareGP1_32.brstm'));
 });
 
-test('a CTGP pack uses the game\'s own file names, only for the 32 originals', () => {
+test('original names add the game file names for the 32 originals, for CTGP', () => {
   const farm = list.tracks.find(t => t.stockFile === 'n_Farm_n')!;
   const factory = list.tracks.find(t => t.stockFile === 'STRM_N_FACTORY_N')!;
   const retro = byName('SNES Mario Circuit 1')!;
-  assert.deepEqual(filesFor(farm, undefined, 'ctgp'), [
-    { name: 'n_Farm_n.brstm', rate: 32000 },
-    { name: 'n_Farm_f.brstm', rate: 33920, final: true },
-  ]);
-  assert.equal(filesFor(factory, undefined, 'ctgp')[1].name, 'STRM_N_FACTORY_F.brstm');
-  const song: SongInfo = { id: 's', title: 'S', duration: 60 } as SongInfo;
-  const { jobs } = planPack([farm, retro], { [farm.file]: newAssignment('s'), [retro.file]: newAssignment('s') }, new Map([['s', song]]), 'ctgp');
-  assert.deepEqual(jobs.flatMap(j => j.files.map(f => f.name)), ['n_Farm_n.brstm', 'n_Farm_f.brstm']);
+  const originals = (files: { name: string; original?: boolean }[]) => files.filter(f => f.original).map(f => f.name);
+  assert.deepEqual(originals(filesFor(farm, undefined, true)), ['n_Farm_n.brstm', 'n_Farm_f.brstm']);
+  assert.deepEqual(originals(filesFor(farm)), []);
+  assert.deepEqual(originals(filesFor(factory, undefined, true)), ['STRM_N_FACTORY_N.brstm', 'STRM_N_FACTORY_F.brstm']);
+  assert.deepEqual(originals(filesFor(retro, undefined, true)), []);
+  const song = { id: 's', title: 'S', duration: 60 } as SongInfo;
+  const circuits = list.tracks.filter(t => t.stockFile === 'n_Circuit32_n');
+  const tracks = [farm, retro, ...circuits];
+  const assignments = Object.fromEntries(tracks.map(t => [t.file, newAssignment('s')]));
+  const { jobs } = planPack(tracks, assignments, new Map([['s', song]]), 'wii', true);
+  const names = jobs.flatMap(j => originals(j.files));
+  assert.deepEqual(names.filter(n => n.startsWith('n_Circuit32')).length, circuits.length ? 2 : 0);
+  assert.ok(names.includes('n_Farm_f.brstm'));
+  assert.ok(jobs.flatMap(j => j.files).some(f => f.name === retro.file + '.brstm'));
 });

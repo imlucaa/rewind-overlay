@@ -4,12 +4,14 @@ import { useRef, useState } from 'react';
 import { TARGETS, type Problem, type Target } from '@/lib/music/pack';
 import { formatDuration } from '@/lib/music/format';
 import type { ExportStatus } from '@/hooks/useExport';
-import { Row, Select, TextField } from '@/components/ui/controls';
+import { Row, Select, TextField, Toggle } from '@/components/ui/controls';
 
 interface Props {
   packName: string;
   target: Target;
   onTarget: (target: Target) => void;
+  originalNames: boolean;
+  onOriginalNames: (on: boolean) => void;
   trackCount: number;
   fileCount: number;
   songCount: number;
@@ -27,7 +29,7 @@ interface Props {
 }
 
 /** Download the pack, check it first, and move assignments between browsers. */
-export function ExportView({ packName, target, onTarget, trackCount, fileCount, songCount, problems, status, onRename, onExport, onSaveFile, onLoadFile, onResetAll, onEvenLoudness, onShare }: Props) {
+export function ExportView({ packName, target, onTarget, originalNames, onOriginalNames, trackCount, fileCount, songCount, problems, status, onRename, onExport, onSaveFile, onLoadFile, onResetAll, onEvenLoudness, onShare }: Props) {
   const load = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [evening, setEvening] = useState(false);
@@ -53,6 +55,9 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
         </Row>
         <Row label="Playing on" hint="Where you play Retro Rewind">
           <Select label="Playing on" value={target} options={TARGETS} onChange={onTarget} />
+        </Row>
+        <Row label="Original file names for the 32 original tracks" hint="For CTGP or the original game, like n_Farm_n. Retro Rewind doesn’t use them.">
+          <Toggle label="Original file names for the 32 original tracks" checked={originalNames} onChange={onOriginalNames} />
         </Row>
         <Row label="Same loudness" hint="Sets each song’s volume so none are much louder or quieter than the rest">
           <button className="button" type="button" disabled={evening || !trackCount} onClick={() => void even()}>
@@ -100,15 +105,7 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
 
       <h2 className="sub">How to install</h2>
       <ol className="steps">
-        {target === 'ctgp' ? (
-          <>
-            <li>Unzip the download.</li>
-            <li>
-              Copy the <code>ctgpr</code> folder to the top of your SD card (on Dolphin, the SD card Dolphin uses). When it asks, choose Replace.
-            </li>
-            <li>Start CTGP and turn on My Stuff.</li>
-          </>
-        ) : target === 'wii' ? (
+        {target === 'wii' ? (
           <>
             <li>Unzip the download.</li>
             <li>Copy the <code>RetroRewind6</code> folder to the top of your SD card. When it asks, choose Replace.</li>
@@ -130,15 +127,17 @@ export function ExportView({ packName, target, onTarget, trackCount, fileCount, 
         <code>
           {target === 'wii'
             ? 'SD card/RetroRewind6/Patches'
-            : target === 'ctgp'
-              ? 'SD card/ctgpr/My Stuff'
-              : 'Dolphin Emulator/Load/Riivolution/RetroRewind6/Patches'}
+            : 'Dolphin Emulator/Load/Riivolution/RetroRewind6/Patches'}
         </code>
         <small>
-          {target === 'ctgp'
-            ? 'Only the 32 original tracks go in a CTGP pack; songs on other tracks are left out. To undo, delete them from My Stuff.'
-            : 'They play instead of those tracks’ music. To undo, delete them from Patches. Still the old music? Check Music is on in Retro Rewind’s settings.'}
+          They play instead of those tracks’ music. To undo, delete them from Patches. Still the old music? Check Music is on in Retro Rewind’s settings.
         </small>
+        {originalNames ? (
+          <small>
+            CTGP: the 32 original tracks also get the game’s own names in <code>ctgpr/My Stuff/sound/strm</code>. Copy the <code>ctgpr</code> folder to
+            the top of your SD card and turn My Stuff on in CTGP. Luigi Circuit and Mario Circuit share one file, so one song plays on both.
+          </small>
+        ) : null}
       </p>
 
       <h2 className="sub">Back up your choices</h2>

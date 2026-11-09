@@ -85,8 +85,8 @@ export function MusicPackApp({ tracks }: Props) {
   }, [pack.assignments]);
   // Wait for the library before judging songs missing, or every assignment looks broken while it loads.
   const plan = useMemo(
-    () => (library.ready ? planPack(tracks, pack.assignments, songsById, pack.target) : { jobs: [], problems: [] }),
-    [library.ready, tracks, pack.assignments, songsById, pack.target],
+    () => (library.ready ? planPack(tracks, pack.assignments, songsById, pack.target, pack.originalNames) : { jobs: [], problems: [] }),
+    [library.ready, tracks, pack.assignments, songsById, pack.target, pack.originalNames],
   );
   const selectedTracks = useMemo(() => tracks.filter(t => selected.has(t.file)), [tracks, selected]);
 
@@ -120,7 +120,7 @@ export function MusicPackApp({ tracks }: Props) {
   /** Loads an assignments file (or a share link's) over the current choices; returns what happened. */
   const loadPackText = (text: string): string => {
     const result = packFromFile(text, library.songs, trackFiles);
-    update(p => ({ ...result.pack, target: p.target }));
+    update(p => ({ ...result.pack, target: p.target, originalNames: p.originalNames }));
     const count = Object.keys(result.pack.assignments).length;
     const skipped = [
       result.missing ? `${result.missing} whose song you don’t have` : '',
@@ -175,10 +175,10 @@ export function MusicPackApp({ tracks }: Props) {
     return `Done: ${volumes.size} song${volumes.size === 1 ? '' : 's'} now play at about the same loudness. Undo puts the old volumes back.`;
   };
 
-  const exportAll = () => void exporter.run(plan.jobs, `${safeFileName(pack.packName)}.zip`, true, pack.target);
+  const exportAll = () => void exporter.run(plan.jobs, `${safeFileName(pack.packName)}.zip`, true, pack.target, pack.originalNames);
   const exportTrack = (track: Track) => {
-    const one = planPack([track], pack.assignments, songsById, pack.target);
-    void exporter.run(one.jobs, `${safeFileName(pack.packName)} - ${track.file}.zip`, false, pack.target);
+    const one = planPack([track], pack.assignments, songsById, pack.target, pack.originalNames);
+    void exporter.run(one.jobs, `${safeFileName(pack.packName)} - ${track.file}.zip`, false, pack.target, pack.originalNames);
   };
 
   const summary = (
@@ -317,6 +317,8 @@ export function MusicPackApp({ tracks }: Props) {
           packName={pack.packName}
           target={pack.target}
           onTarget={target => update(p => ({ ...p, target }))}
+          originalNames={pack.originalNames}
+          onOriginalNames={originalNames => update(p => ({ ...p, originalNames }))}
           trackCount={assignedTracks.length}
           fileCount={fileCount}
           songCount={songsToEncode}

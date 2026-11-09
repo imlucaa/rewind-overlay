@@ -24,7 +24,7 @@ export function download(blob: Blob, name: string): void {
 export function useExport() {
   const [status, setStatus] = useState<ExportStatus>({ kind: 'idle' });
 
-  const run = async (jobs: readonly EncodeJob[], downloadName: string, withReadme: boolean, target: Target) => {
+  const run = async (jobs: readonly EncodeJob[], downloadName: string, withReadme: boolean, target: Target, originalNames = false) => {
     // The encoder only loads once something is exported.
     const [{ renderBrstm }, { withSampleRate }] = await Promise.all([import('@/lib/music/render'), import('@/lib/music/brstm')]);
     const zip = new ZipWriter();
@@ -41,7 +41,7 @@ export function useExport() {
         );
         for (const file of job.files) {
           const data = file.rate === SAMPLE_RATE ? bytes : withSampleRate(bytes, file.rate);
-          zip.add(`${folderFor(target)}/${file.name}`, data);
+          zip.add(`${folderFor(file)}/${file.name}`, data);
           single = { name: file.name, data };
         }
       } catch (e) {
@@ -55,7 +55,7 @@ export function useExport() {
     const files = zip.size;
     if (files === 1 && !withReadme && single) download(new Blob([single.data as Uint8Array<ArrayBuffer>]), single.name);
     else {
-      if (withReadme) zip.add('README.txt', new TextEncoder().encode(readmeFor(target)));
+      if (withReadme) zip.add('README.txt', new TextEncoder().encode(readmeFor(target, originalNames)));
       download(zip.blob(), downloadName);
     }
     setStatus({ kind: 'finished', files, failed });
