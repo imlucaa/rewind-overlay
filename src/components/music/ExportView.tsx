@@ -134,7 +134,7 @@ export function ExportView({ packName, target, onTarget, originalNames, onOrigin
         </small>
         {originalNames ? (
           <small>
-            CTGP: the 32 original tracks also get the game’s own names in <code>ctgpr/My Stuff/sound/strm</code>. Copy the <code>ctgpr</code> folder to
+            CTGP: the 32 original tracks also get the game’s own names in <code>ctgpr/My Stuff</code>. Copy the <code>ctgpr</code> folder to
             the top of your SD card and turn My Stuff on in CTGP. Luigi Circuit and Mario Circuit share one file, so one song plays on both.
           </small>
         ) : null}

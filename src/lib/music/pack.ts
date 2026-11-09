@@ -182,8 +182,8 @@ export const TARGETS: readonly (readonly [Target, string])[] = [
 ];
 
 export const DOLPHIN_FOLDER = 'Dolphin Emulator/Load/Riivolution';
-/** CTGP's My Stuff folder on the SD card, laid out like the game (sound/strm). It loads files over the game's own. */
-export const ORIGINAL_FOLDER = 'ctgpr/My Stuff/sound/strm';
+/** CTGP's My Stuff folder on the SD card. CTGP Classic's My Stuff options read it flat, files matched by name. */
+export const ORIGINAL_FOLDER = 'ctgpr/My Stuff';
 
 export const folderFor = (file: OutputFile): string => (file.original ? ORIGINAL_FOLDER : MUSIC_FOLDER);
 
