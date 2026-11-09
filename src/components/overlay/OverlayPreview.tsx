@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { Skeleton } from '@/components/amicro/Loaders';
 
 // The overlay lays out at least FRAME px wide, then is scaled down to the stage, so the card always fits.
 const FRAME = 760;
@@ -30,10 +31,18 @@ export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop 
   const stage = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [src, setSrc] = useState('about:blank');
+  // The first overlay to load (not later rebuilds, which would flash), shown as a skeleton until its frame is in.
+  const [loading, setLoading] = useState<string | null>(null);
 
   // Rebuilding the overlay on every keystroke would flicker: wait until typing pauses.
   useEffect(() => {
-    const timer = setTimeout(() => setSrc(url ?? 'about:blank'), 400);
+    const timer = setTimeout(() => {
+      const next = url ?? 'about:blank';
+      setSrc(old => {
+        if (old === 'about:blank' && next !== 'about:blank') setLoading(next);
+        return next;
+      });
+    }, 400);
     return () => clearTimeout(timer);
   }, [url]);
 
@@ -73,7 +82,8 @@ export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop 
 
   return (
     <div className="stage" ref={stage} data-backdrop={backdrop}>
-      <iframe ref={frame} src={src} title="Overlay preview" />
+      <iframe ref={frame} src={src} title="Overlay preview" onLoad={() => setLoading(null)} />
+      {loading === src && url ? <Skeleton className="stage-skeleton" /> : null}
       {url ? null : <p className="stage-empty">{emptyMessage}</p>}
     </div>
   );

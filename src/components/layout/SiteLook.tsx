@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStoredState } from '@/hooks/useStoredState';
 import {
-  FONTS, INTROS, MAX_FONT_BYTES, THEMES, THEME_KEY, applyTheme, customVars, defaultTheme, parseTheme, playIntro, type CustomColors,
+  FONTS, INTROS, MAX_FONT_BYTES, MOTIONS, THEMES, THEME_KEY, applyTheme, customVars, defaultTheme, parseTheme, playIntro, type CustomColors,
   type SiteTheme,
 } from '@/lib/siteTheme';
 import { ColorField, Select } from '@/components/ui/controls';
@@ -187,6 +187,10 @@ export function SiteLook() {
                 ▶ Preview
               </button>
             </div>
+          </label>
+          <label>
+            <span>Animations</span>
+            <Select label="Animations" value={theme.motion} options={MOTIONS} onChange={v => set({ motion: v })} />
           </label>
           {message ? <p className="note">{message}</p> : null}
           <button

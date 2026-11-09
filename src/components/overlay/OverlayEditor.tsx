@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppShell, Tab } from '@/components/layout/AppShell';
+import { Magnetic } from '@/components/amicro/Magnetic';
+import { SwapText } from '@/components/amicro/SwapText';
 import { Row, Select, Slider } from '@/components/ui/controls';
 import { useStoredState } from '@/hooks/useStoredState';
 import { overlayUrl } from '@/lib/overlay/link';
@@ -75,9 +77,11 @@ export function OverlayEditor() {
           <a className="button hide-small" href={url ?? '#'} target="_blank" rel="noopener" aria-disabled={!url}>
             Open
           </a>
-          <button className="button primary" type="button" onClick={copy}>
-            {copied ? 'Copied' : 'Copy link'}
-          </button>
+          <Magnetic>
+            <button className="button primary" type="button" onClick={copy}>
+              <SwapText text={copied ? 'Copied' : 'Copy link'} />
+            </button>
+          </Magnetic>
         </>
       }
       asideLabel="Preview"

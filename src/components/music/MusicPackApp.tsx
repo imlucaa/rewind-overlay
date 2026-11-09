@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStoredState } from '@/hooks/useStoredState';
 import { AppShell, Tab } from '@/components/layout/AppShell';
+import { Magnetic } from '@/components/amicro/Magnetic';
+import { BounceDots } from '@/components/amicro/Loaders';
 import { useLibrary } from '@/hooks/useLibrary';
 import { usePack } from '@/hooks/usePack';
 import { usePreview } from '@/hooks/usePreview';
@@ -227,9 +229,17 @@ export function MusicPackApp({ tracks }: Props) {
           <button className="button hide-small" type="button" onClick={redo} disabled={!canRedo} aria-label="Redo">
             Redo
           </button>
-          <button className="button primary" type="button" disabled={exporter.busy || !songsToEncode} onClick={exportAll}>
-            {exporter.busy ? 'Exporting…' : 'Download pack'}
-          </button>
+          <Magnetic>
+            <button className="button primary" type="button" disabled={exporter.busy || !songsToEncode} onClick={exportAll}>
+              {exporter.busy ? (
+                <>
+                  Exporting <BounceDots />
+                </>
+              ) : (
+                'Download pack'
+              )}
+            </button>
+          </Magnetic>
         </>
       }
       asideLabel={view === 'tracks' ? 'Selected track' : 'Pack'}

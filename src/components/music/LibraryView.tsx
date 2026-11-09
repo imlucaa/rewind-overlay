@@ -1,6 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ShimmerLine } from '@/components/amicro/Loaders';
+import { easeOutExpo } from '@/components/amicro/presets';
 import type { SongInfo } from '@/lib/music/library';
 import type { Track } from '@/lib/music/tracks';
 import { formatDuration, formatSize } from '@/lib/music/format';
@@ -69,6 +72,7 @@ export function LibraryView({ songs, tracks, usage, assignments, preview, storag
     <div className="music-view">
       <div
         className="dropzone"
+        data-spotlight
         data-dragging={dragging}
         onDragOver={e => {
           e.preventDefault();
@@ -91,6 +95,7 @@ export function LibraryView({ songs, tracks, usage, assignments, preview, storag
             Import a pack
           </button>
         </div>
+        {busy ? <ShimmerLine /> : null}
         <input
           ref={browsePack}
           type="file"
@@ -120,9 +125,11 @@ export function LibraryView({ songs, tracks, usage, assignments, preview, storag
 
       {songs.length ? (
         <ul className="song-list">
-          {songs.map(song => (
+          <AnimatePresence initial={true}>
+          {songs.map((song, index) => (
             <SongCard
               key={song.id}
+              index={index}
               song={song}
               usedOn={usage.get(song.id) ?? 0}
               preview={preview}
@@ -140,6 +147,7 @@ export function LibraryView({ songs, tracks, usage, assignments, preview, storag
               }}
             />
           ))}
+          </AnimatePresence>
         </ul>
       ) : (
         <p className="empty">No songs yet. Add some, then give them tracks under Tracks.</p>
@@ -149,6 +157,8 @@ export function LibraryView({ songs, tracks, usage, assignments, preview, storag
 }
 
 interface CardProps {
+  /** Its place in the list, for the staggered entrance. */
+  index: number;
   song: SongInfo;
   usedOn: number;
   preview: Preview;
@@ -160,12 +170,23 @@ interface CardProps {
   onRemoveTrack: (track: Track) => void;
 }
 
-function SongCard({ song, usedOn, preview, onReplace, onRemove, tracks, using, onPickTrack, onRemoveTrack }: CardProps) {
+function SongCard({ index, song, usedOn, preview, onReplace, onRemove, tracks, using, onPickTrack, onRemoveTrack }: CardProps) {
   const replace = useRef<HTMLInputElement>(null);
   const key = 'song:' + song.id;
   const playing = preview.playing === key;
   return (
-    <li className="song">
+    // Amicro's ScrollReveal with a short stagger: songs rise in as they come into view; a removed one slides out
+    // and the rest close up.
+    <motion.li
+      className="song"
+      data-spotlight
+      layout="position"
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      exit={{ opacity: 0, x: -16, transition: { duration: 0.18 } }}
+      transition={{ duration: 0.5, ease: easeOutExpo, delay: Math.min(index, 8) * 0.035 }}
+    >
       <PlayButton playing={playing} label={song.title} onToggle={() => (playing ? preview.pause() : void preview.play(key, song.id, song.title))} />
       <div className="song-text">
         <strong>{song.title}</strong>
@@ -194,7 +215,7 @@ function SongCard({ song, usedOn, preview, onReplace, onRemove, tracks, using, o
       <button className="link-button danger" type="button" onClick={onRemove}>
         Remove
       </button>
-    </li>
+    </motion.li>
   );
 }
 

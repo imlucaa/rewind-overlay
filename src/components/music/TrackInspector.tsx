@@ -11,6 +11,7 @@ import { formatDuration } from '@/lib/music/format';
 import type { Preview } from '@/hooks/usePreview';
 import { Row, Select, Slider, Toggle } from '@/components/ui/controls';
 import { PlayButton } from './LibraryView';
+import { TextReveal } from '@/components/amicro/TextReveal';
 import { LoopEditor } from './LoopEditor';
 
 interface Props {
@@ -146,7 +147,7 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
         </div>
       ) : null}
       <header>
-        <h2>{single ? single.name : `${tracks.length} tracks`}</h2>
+        <TextReveal text={single ? single.name : `${tracks.length} tracks`} />
         {single ? (
           <small>
             {filesFor(single, first).map(f => f.name).join(' + ')}

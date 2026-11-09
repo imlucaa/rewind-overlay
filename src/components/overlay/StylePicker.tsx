@@ -2,6 +2,7 @@
 
 import { styleOf, type Settings, type Style } from '@/lib/overlay/settings';
 import { asset } from '@/lib/paths';
+import { TiltButton } from '@/components/amicro/TiltButton';
 
 // A small drawing of each look: a mini card, a slim pill, or the number in the game's own digits.
 const CardLook = (
@@ -45,11 +46,11 @@ export function StylePicker({ settings, onPick }: { settings: Settings; onPick: 
   return (
     <div className="styles" role="radiogroup" aria-label="Style">
       {LOOKS.map(({ style, title, sub, look }) => (
-        <button key={style} type="button" role="radio" aria-checked={current === style} onClick={() => onPick(style)}>
+        <TiltButton key={style} type="button" role="radio" aria-checked={current === style} data-spotlight onClick={() => onPick(style)}>
           <span className="look">{look}</span>
           <strong>{title}</strong>
           <small>{sub}</small>
-        </button>
+        </TiltButton>
       ))}
     </div>
   );

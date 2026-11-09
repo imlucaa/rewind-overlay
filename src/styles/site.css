@@ -548,11 +548,17 @@ input[type="range"] {
   }
 }
 
+/* Reduce motion (system), unless Site look › Animations says All; or Animations says Less. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  :root:not([data-motion="full"]) * {
     animation: none !important;
     transition: none !important;
   }
+}
+
+:root[data-motion="reduced"] * {
+  animation: none !important;
+  transition: none !important;
 }
 
 /* ---------- style picker (Player) ---------- */
@@ -1030,11 +1036,11 @@ html[data-intro="slide"] .app .nav > :nth-child(n + 5) { animation-delay: 300ms;
 
 /* With "reduce motion" on (Windows: Animation effects off) nothing moves, but a plain fade still plays. */
 @media (prefers-reduced-motion: reduce) {
-  html[data-intro]:not([data-intro="off"]) .app {
+  html:not([data-motion="full"])[data-intro]:not([data-intro="off"]) .app {
     animation: start-fade-only 500ms ease-out backwards !important;
   }
 
-  .view.switched {
+  html:not([data-motion="full"]) .view.switched {
     animation: start-fade-only 250ms ease-out backwards !important;
   }
 }
@@ -1204,4 +1210,219 @@ html[data-intro="slide"] .app .nav > :nth-child(n + 5) { animation-delay: 300ms;
   :root[data-compact] .app {
     grid-template-rows: 48px auto auto 1fr;
   }
+}
+
+/* ---------- Amicro micro-interactions (components/amicro) ----------
+   One feel everywhere: the expo ease-out from Amicro's reveals, springs for things that follow the mouse. Only
+   transform and opacity move, so nothing shifts the layout. */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Tabs: the highlight glides from the old tab to the new one (motion layoutId). */
+.nav button {
+  position: relative;
+  isolation: isolate;
+}
+
+.nav button[aria-current="true"] {
+  background: transparent;
+}
+
+.tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.tab-text {
+  position: relative;
+}
+
+/* Buttons: a quick press, a light shine across the main ones. */
+.button,
+.chip,
+.play,
+.site-look-button {
+  transition: background var(--fast), border-color var(--fast), color var(--fast), transform 180ms var(--ease-out);
+}
+
+.button:active:not(:disabled),
+.chip:active,
+.play:active:not(:disabled),
+.site-look-button:active {
+  transform: scale(0.96);
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.button.primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, var(--accent-ink) 14%, transparent) 50%, transparent 70%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+
+.button.primary:hover:not(:disabled)::after {
+  transform: translateX(110%);
+  transition: transform 750ms var(--ease-out);
+}
+
+/* Magnetic wrapper: only moves the button, takes no extra space. */
+.magnetic {
+  display: inline-flex;
+}
+
+/* Copy link -> Copied rolls instead of jumping. */
+.swap-text {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.swap-text > span {
+  display: inline-block;
+}
+
+/* Spotlight: a soft light follows the mouse over cards (MotionRoot sets --mx/--my). */
+[data-spotlight] {
+  position: relative;
+}
+
+[data-spotlight]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+[data-spotlight]:hover::before {
+  opacity: 1;
+}
+
+
+/* Headings that slide up out of a mask (TextReveal). */
+.text-reveal {
+  overflow: hidden;
+  /* room for g, y and p under the line, without moving anything */
+  padding-bottom: 3px;
+  margin-bottom: -3px;
+}
+
+.text-reveal > span {
+  display: block;
+}
+
+/* Loaders. */
+.bounce-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 6px;
+}
+
+.bounce-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.shimmer-line {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.shimmer-line i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 33%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.skeleton {
+  display: block;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.skeleton i {
+  position: absolute;
+  inset: 0;
+  width: 80%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 8%, transparent), transparent);
+}
+
+/* While the overlay first loads: a card-shaped placeholder where it will appear. */
+.stage-skeleton {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46%;
+  height: 20%;
+  border-radius: 12px;
+  translate: -50% -50%;
+}
+
+/* Tab switch: the rows come in one after another. */
+.view.switched .rows > * {
+  animation: start-rise 420ms var(--ease-out) backwards;
+}
+.view.switched .rows > :nth-child(2) {
+  animation-delay: 25ms;
+}
+.view.switched .rows > :nth-child(3) {
+  animation-delay: 50ms;
+}
+.view.switched .rows > :nth-child(4) {
+  animation-delay: 75ms;
+}
+.view.switched .rows > :nth-child(5) {
+  animation-delay: 100ms;
+}
+.view.switched .rows > :nth-child(6) {
+  animation-delay: 125ms;
+}
+.view.switched .rows > :nth-child(7) {
+  animation-delay: 150ms;
+}
+.view.switched .rows > :nth-child(8) {
+  animation-delay: 175ms;
+}
+.view.switched .rows > :nth-child(9) {
+  animation-delay: 200ms;
+}
+.view.switched .rows > :nth-child(10) {
+  animation-delay: 225ms;
+}
+.view.switched .rows > :nth-child(11) {
+  animation-delay: 250ms;
+}
+.view.switched .rows > :nth-child(12) {
+  animation-delay: 275ms;
+}
+.view.switched .rows > :nth-child(n + 13) {
+  animation-delay: 300ms;
 }
