@@ -117,3 +117,17 @@ test('menus and fanfares: under the game’s names, no final lap, jingles play o
   assert.equal(once.assignment.loop, null);
   assert.ok(jobs.some(j => !j.assignment.playsOnce && j.files[0].name === 'o_FanfareGP1_32.brstm'));
 });
+
+test('a CTGP pack uses the game\'s own file names, only for the 32 originals', () => {
+  const farm = list.tracks.find(t => t.stockFile === 'n_Farm_n')!;
+  const factory = list.tracks.find(t => t.stockFile === 'STRM_N_FACTORY_N')!;
+  const retro = byName('SNES Mario Circuit 1')!;
+  assert.deepEqual(filesFor(farm, undefined, 'ctgp'), [
+    { name: 'n_Farm_n.brstm', rate: 32000 },
+    { name: 'n_Farm_f.brstm', rate: 33920, final: true },
+  ]);
+  assert.equal(filesFor(factory, undefined, 'ctgp')[1].name, 'STRM_N_FACTORY_F.brstm');
+  const song: SongInfo = { id: 's', title: 'S', duration: 60 } as SongInfo;
+  const { jobs } = planPack([farm, retro], { [farm.file]: newAssignment('s'), [retro.file]: newAssignment('s') }, new Map([['s', song]]), 'ctgp');
+  assert.deepEqual(jobs.flatMap(j => j.files.map(f => f.name)), ['n_Farm_n.brstm', 'n_Farm_f.brstm']);
+});

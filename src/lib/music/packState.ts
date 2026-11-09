@@ -54,8 +54,8 @@ export function parsePack(text: string | null): PackState {
     return {
       packName: typeof raw.packName === 'string' && raw.packName.trim() ? raw.packName : emptyPack().packName,
       assignments: readAssignments(raw.assignments),
-      // the two Dolphin choices were merged into one
-      target: raw.target === 'dolphin-ww' ? 'dolphin' : TARGETS.some(([t]) => t === raw.target) ? (raw.target as Target) : 'wii',
+      // the Dolphin and Wheel Wizard choices were merged into one
+      target: raw.target === 'dolphin-ww' || raw.target === 'wheelwizard' ? 'dolphin' : TARGETS.some(([t]) => t === raw.target) ? (raw.target as Target) : 'wii',
     };
   } catch {
     return emptyPack();

@@ -109,7 +109,16 @@ export const jobKey = (a: Assignment): string =>
  * the final lap speed isn't the game's own 1.06x (otherwise the game speeds up the normal file itself, which sounds
  * the same).
  */
-export function filesFor(track: Track, assignment?: Partial<Pick<Assignment, 'finalSpeed' | 'finalSongId'>>): OutputFile[] {
+export function filesFor(track: Track, assignment?: Partial<Pick<Assignment, 'finalSpeed' | 'finalSongId'>>, target: Target = 'wii'): OutputFile[] {
+  if (target === 'ctgp') {
+    // CTGP plays the unmodded game's files, and the unmodded game has its own final lap file (_f) for every track.
+    if (!track.stockFile) return [];
+    const finalSpeed = assignment?.finalSpeed ?? FINAL_LAP_SPEED;
+    return [
+      { name: track.stockFile + '.brstm', rate: SAMPLE_RATE },
+      { name: track.stockFile.replace(/_n$/, '_f').replace(/_N$/, '_F') + '.brstm', rate: Math.min(MAX_WII_RATE, Math.round(SAMPLE_RATE * finalSpeed)), final: true },
+    ];
+  }
   const files: OutputFile[] = [{ name: track.file + '.brstm', rate: SAMPLE_RATE }];
   if (isGameMusic(track)) return files;
   const finalSpeed = assignment?.finalSpeed ?? FINAL_LAP_SPEED;
@@ -123,9 +132,15 @@ export function filesFor(track: Track, assignment?: Partial<Pick<Assignment, 'fi
 export function planPack(tracks: readonly Track[], assignments: Assignments, songs: ReadonlyMap<string, SongInfo>, target: Target = 'wii') {
   const jobs = new Map<string, EncodeJob>();
   const problems: Problem[] = [];
+  const taken = new Set<string>();
   for (const track of tracks) {
     const assigned = assignments[track.file];
     if (!assigned) continue;
+    if (target === 'ctgp') {
+      // Only the 32 originals exist in CTGP; Luigi Circuit and Mario Circuit share one file, the first one wins.
+      if (!track.stockFile || taken.has(track.stockFile)) continue;
+      taken.add(track.stockFile);
+    }
     // Jingles play once; game music has no final lap.
     const assignment: Assignment = track.playsOnce
       ? { ...assigned, loop: null, playsOnce: true, finalSongId: null }
@@ -135,7 +150,7 @@ export function planPack(tracks: readonly Track[], assignments: Assignments, son
       problems.push({ kind: 'missing-song', track });
       continue;
     }
-    const files = filesFor(track, assignment);
+    const files = filesFor(track, assignment, target);
     const lap3 = finalAssignment(assignment);
     const lap3Song = lap3 ? songs.get(lap3.songId) : undefined;
     if (lap3 && !lap3Song) problems.push({ kind: 'missing-final-song', track });
@@ -153,28 +168,39 @@ export function planPack(tracks: readonly Track[], assignments: Assignments, son
   }
   for (const job of jobs.values()) {
     const seconds = (job.assignment.loop?.end ?? job.song.duration) / job.assignment.speed;
-    if (target === 'wii' && seconds > LONG_SONG_SECONDS && !problems.some(p => p.kind === 'long-song' && p.song.id === job.song.id))
+    if (target !== 'dolphin' && seconds > LONG_SONG_SECONDS && !problems.some(p => p.kind === 'long-song' && p.song.id === job.song.id))
       problems.push({ kind: 'long-song', song: job.song, seconds });
   }
   return { jobs: [...jobs.values()], problems };
 }
 
 /** Where the pack will be played. It decides the install steps, and the Wii's memory limit on long songs. */
-export type Target = 'wii' | 'wheelwizard' | 'dolphin';
+export type Target = 'wii' | 'dolphin' | 'ctgp';
 
 export const TARGETS: readonly (readonly [Target, string])[] = [
   ['wii', 'Wii (SD card)'],
-  ['wheelwizard', 'Wheel Wizard'],
-  ['dolphin', 'Dolphin without Wheel Wizard'],
+  ['dolphin', 'Dolphin'],
+  ['ctgp', 'CTGP (32 original tracks)'],
 ];
 
-/** Dolphin's Riivolution folder; Wheel Wizard keeps Retro Rewind one folder further in. */
 export const DOLPHIN_FOLDER = 'Dolphin Emulator/Load/Riivolution';
-export const WHEEL_WIZARD_FOLDER = DOLPHIN_FOLDER + '/WheelWizard';
+/** CTGP loads files from My Stuff over the game's own, matched by name. */
+export const CTGP_FOLDER = 'ctgpr/My Stuff';
 
-/** The zip's README (Wheel Wizard zips have none: Wheel Wizard would copy it into Patches). */
+export const folderFor = (target: Target): string => (target === 'ctgp' ? CTGP_FOLDER : MUSIC_FOLDER);
+
+/** The zip's README. */
 export const readmeFor = (target: Target): string =>
-  target === 'wii'
+  target === 'ctgp'
+    ? `CTGP music pack (the 32 original tracks)
+
+1. Copy the ctgpr folder to the top of your SD card (in Dolphin: the SD card Dolphin uses). When it asks, choose Replace.
+2. Start CTGP and turn on My Stuff.
+
+Your songs go in SD:/${CTGP_FOLDER} and play instead of those tracks' music.
+To go back to the game's own music, delete them from My Stuff.
+`
+    : target === 'wii'
     ? `Retro Rewind music pack, made for Wii
 
 1. Copy the RetroRewind6 folder to the top of your SD card. When it asks, choose Replace.
