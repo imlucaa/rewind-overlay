@@ -119,6 +119,7 @@ export const SECTIONS: readonly SectionDef[] = [
     title: 'Size',
     rows: [
       { label: 'Size', hint: 'Use this instead of stretching it in OBS, it stays sharp', control: slider('layout.scale', 0.5, 3, 0.05, 'x') },
+      { label: 'VR change size', hint: 'How big +175 or -353 is next to your VR', control: slider('plus.changeSize', 50, 300, 10, '%'), when: isHud },
       { label: 'Width', control: slider('layout.width', 320, 900, 10, ' px'), when: notHud },
       { label: 'Smaller padding', control: toggle('layout.compact'), when: notHud },
       { label: 'Card background', hint: 'Off shows only the text', control: toggle('plus.card'), when: notHud },

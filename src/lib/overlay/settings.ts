@@ -98,6 +98,8 @@ export interface PlusSettings {
     changeBox: boolean;
     /** Race HUD: the last change stays beside the number until the next race, instead of counting away. */
     keepChange: boolean;
+    /** Race HUD: how big the +/- change is drawn, in percent (100 = the game's small one). */
+    changeSize: number;
     /** Stats tab: a VR goal (digits, empty for none), VR to the next rank, races this stream, win streak. */
     goal: string;
     nextRank: boolean;
@@ -130,7 +132,7 @@ export const PLUS_DEFAULTS: PlusSettings = {
   player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', mkwLadder: 'rt', flag: false },
   plus: {
     rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 2, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
-    card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true, keepChange: false,
+    card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true, keepChange: false, changeSize: 100,
     goal: '', nextRank: false, raceCount: false, winStreak: false,
   },
 };

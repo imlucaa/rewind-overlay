@@ -82,6 +82,7 @@ export function overlayQuery(settings: Settings): string {
     params.set('text', 'hud');
     params.set('vrhud', '1');
     if (plus.keepChange) params.set('vk', 'on');
+    if (plus.changeSize !== 100) params.set('cs', String(plus.changeSize));
   }
   const goal = parseInt(plus.goal.replace(/\D/g, ''), 10);
   if (goal > 0) params.set('goal', String(goal));

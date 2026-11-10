@@ -532,6 +532,8 @@
   const raceCount = q.get('vrhud') === '1';
   // vk=on: the change stays beside the number until the next one, instead of counting into it and going.
   const keepChange = raceCount && q.get('vk') === 'on';
+  // cs=<percent>: how big the race HUD's +/- change is drawn (100 = the game's small one).
+  const changeSize = Math.min(300, Math.max(50, parseFloat(q.get('cs')) || 100)) / 100;
   const badgeSize = Math.min(300, Math.max(30, parseFloat(q.get('bs')) || 100)) / 100;
   const badgeGap = Math.min(100, Math.max(0, parseFloat(q.get('bg') ?? '15'))) / 100;
   const ro = hex(q.get('ro'));
@@ -659,6 +661,9 @@
           text: clean(el.textContent || ''),
         });
       const vrNow = parseInt((document.querySelector('.vr-value')?.textContent || '').replace(/[^0-9-]/g, ''), 10) || 0;
+      // Race HUD: the change is drawn beside the number, not where the page's change box sits (the card's far edge,
+      // which moves away as the overlay gets bigger).
+      const vrHere = document.querySelector('.vr-value');
       for (const el of document.querySelectorAll('.element-delta .delta')) {
         let text = (el.textContent || '').replace(/[^0-9+-]/g, '');
         if (raceCount) {
@@ -669,7 +674,7 @@
           else if (text !== lastDelta) vrStart = vrNow;
           lastDelta = text;
           if (keepChange) {
-            if (delta) list.push({ el, kind: 'delta', text: (delta > 0 ? '+' : '') + delta });
+            if (delta) list.push(vrHere ? { el: vrHere, kind: 'side', text: (delta > 0 ? '+' : '') + delta } : { el, kind: 'delta', text: (delta > 0 ? '+' : '') + delta });
             continue;
           }
           const left = delta - (vrNow - vrStart);
@@ -680,12 +685,16 @@
           }
           if (left === 0 || Math.sign(left) !== Math.sign(delta)) continue;
           text = (left > 0 ? '+' : '') + left;
+          if (vrHere) {
+            list.push({ el: vrHere, kind: 'side', text });
+            continue;
+          }
         }
         list.push({ el, kind: 'delta', text });
       }
       const vrEl = document.querySelector('.vr-value');
       // MMR: the page has no change to show, so the one seen in the shim counts down beside the number.
-      if (raceCount && mmr && mmrChange && vrEl && !list.some(t => t.kind === 'delta')) {
+      if (raceCount && mmr && mmrChange && vrEl && !list.some(t => t.kind === 'delta' || t.kind === 'side')) {
         const left = mmrChange.delta - (vrNow - mmrChange.from);
         if (keepChange) list.push({ el: vrEl, kind: 'side', text: (mmrChange.delta > 0 ? '+' : '') + mmrChange.delta });
         else if (left !== 0 && Math.sign(left) === Math.sign(mmrChange.delta) && Math.abs(left) <= Math.abs(mmrChange.delta))
@@ -722,7 +731,9 @@
         .map(t => {
           const r = t.el.getBoundingClientRect();
           const cs = getComputedStyle(t.el);
-          return { ...t, r, size: parseFloat(cs.fontSize) || r.height, pad: parseFloat(cs.paddingLeft) || 0 };
+          // The page scales the overlay with a transform (Size), which font-size doesn't include: scale by it too.
+          const k = t.el.offsetHeight ? r.height / t.el.offsetHeight : 1;
+          return { ...t, r, size: (parseFloat(cs.fontSize) || r.height / k) * k, pad: (parseFloat(cs.paddingLeft) || 0) * k };
         })
         .filter(i => i.r.width > 0 && (i.kind !== 'vr' || digits || rank));
       const key =
@@ -732,7 +743,7 @@
         last = key;
         layer.textContent = '';
         for (const i of items) {
-          const h = i.size * (i.kind === 'side' ? 0.55 : 1.08);
+          const h = i.size * (i.kind === 'side' ? 0.55 * changeSize : 1.08);
           const fontHere = i.kind === 'vr' ? digits : true;
           if (fontHere) hide(i.el);
           const box = document.createElement('div');
@@ -745,7 +756,8 @@
               ? `left:${i.r.left + i.pad}px`
               : `right:${fontHere ? innerWidth - i.r.right : innerWidth - i.r.left + h * badgeGap}px`;
           if (i.kind === 'side' || i.stat) box.dataset.side = '1'; // the change and the stats don't move the centre
-          const top = i.kind === 'side' ? i.r.top + i.r.height * 0.12 : i.r.top + (i.r.height - h) / 2;
+          // The change lines up with the top of the number, whatever its size.
+          const top = i.kind === 'side' ? i.r.top + (i.r.height - i.size * 1.08) / 2 : i.r.top + (i.r.height - h) / 2;
           box.style.cssText = `position:fixed;top:${top}px;${side};height:${h}px;display:flex;align-items:center`;
           if (rank && i.kind === 'vr') {
             const value = parseInt(i.text, 10) || 0;
