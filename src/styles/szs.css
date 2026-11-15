@@ -1,0 +1,364 @@
+/* The common.szs editor: no side column, so the color cards use the full width. Colors and type come from site.css. */
+
+.app.music.szs {
+  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-rows: 56px 1fr;
+  grid-template-areas:
+    "side top"
+    "side panel";
+}
+
+.app.szs .preview {
+  display: none;
+}
+
+.app.szs .panel {
+  max-width: none;
+}
+
+@media (max-width: 1180px) {
+  .app.music.szs {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 56px auto 1fr;
+    grid-template-areas:
+      "top"
+      "side"
+      "panel";
+  }
+}
+
+.fx-help {
+  margin: 0 0 4px;
+  max-width: 80ch;
+}
+
+.fx-section {
+  margin-top: 18px;
+}
+
+.fx-section .sub {
+  margin: 0 0 8px;
+}
+
+.fx-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+/* Swatch on the left, name and controls beside it, the color strip along the bottom. */
+.fx-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  column-gap: 10px;
+  row-gap: 8px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  transition: border-color var(--fast);
+}
+
+.fx-card:hover {
+  border-color: var(--line-strong);
+}
+
+/* Will be recolored on save. */
+.fx-card[data-changed] {
+  border-color: var(--muted);
+}
+
+.fx-swatch {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.fx-swatch input {
+  position: absolute;
+  inset: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.fx-swatch input:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.fx-swatch:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The color before your pick. */
+.fx-swatch i {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  border-top-left-radius: 4px;
+  box-shadow: -1px -1px 0 var(--surface);
+  pointer-events: none;
+}
+
+.fx-body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fx-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fx-head strong {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The number of effects in the group. */
+.fx-head small {
+  color: var(--soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-reset {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  padding: 0 0 0 4px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fx-reset:hover {
+  color: var(--text);
+}
+
+.fx-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.fx-pick input[type='text'] {
+  width: 10ch;
+  min-width: 0;
+  min-height: 26px;
+  padding: 2px 6px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
+.fx-pick input[aria-invalid] {
+  border-color: var(--warn);
+}
+
+.fx-pick label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fx-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.fx-strip i {
+  flex: 1;
+}
+
+.fx-tab-count {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--line-strong);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Textures: a checkerboard behind each preview so see-through parts show. */
+.tx-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.tx-bar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.tx-grid {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.tx-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.tx-card[data-changed] {
+  border-color: var(--muted);
+}
+
+.tx-preview {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  border-radius: 6px;
+  background: repeating-conic-gradient(#26262a 0% 25%, #1a1a1d 0% 50%) 50% / 14px 14px;
+  overflow: hidden;
+}
+
+.tx-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Marks a texture you replaced. */
+.tx-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tx-info {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tx-info strong {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tx-info small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tx-info code {
+  margin-right: 6px;
+  font-size: 11px;
+  color: var(--soft);
+}
+
+.tx-used {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--soft) !important;
+}
+
+.tx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tx-links {
+  display: flex;
+  margin-left: auto;
+}
+
+.tx-link {
+  background: none;
+  border: 0;
+  padding: 4px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tx-link:hover {
+  color: var(--text);
+}
+
+.fx-steps {
+  margin: 0 0 4px;
+  padding-left: 20px;
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.fx-steps b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Where the group shows up in the game. */
+.fx-about {
+  margin: -3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

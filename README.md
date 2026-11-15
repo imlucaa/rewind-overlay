@@ -1,7 +1,7 @@
 # Overlay
 
-A Retro Rewind VR and RR Lounge MMR overlay for OBS, and a Retro Rewind music pack maker. Both run in the browser.
-Nothing to download.
+A Retro Rewind VR and RR Lounge MMR overlay for OBS, a Retro Rewind music pack maker, and a common.szs editor. All run in
+the browser. Nothing to download.
 
 **Open it:** https://imlucaa.github.io/rewind-overlay/
 
@@ -25,6 +25,19 @@ Songs become looping 32 kHz DSP-ADPCM `.brstm` files in `RetroRewind6/Patches`, 
 own music. Tracks where Retro Rewind has its own final lap file get one too. Songs stay in your browser; nothing is
 uploaded.
 
+## common.szs
+
+1. Open Mario Kart Wii's `Race/Common.szs` (or a mod's copy).
+2. **Effect colors:** pick a color for a group of race effects (mini-turbo sparks, trick boost, item effects, splashes:
+   34 groups covering all 516 effects in `Effect/RKRace.breff`). The group's main color becomes the pick; the rest take
+   its hue and keep their light and dark. **Keep white** leaves near-white parts alone.
+3. **Textures:** see the 94 effect textures in `Effect/RKRace.breft`, with the effects that use each. Replace one with
+   your own image (saved as RGB5A3, at 1×, 2× or 4× the original size), or download it as a PNG. The trick ring is
+   `rk_hamon`. The game tints textures with the effect's colors; **Untint** sets those groups to white.
+4. Save. The new `common.szs` is Yaz0-compressed again; put it where the one you opened came from.
+
+Recoloring changes only RGB bytes: alpha, sizes and timing stay as they were.
+
 ## Development
 
 Needs Node 22.18 or newer.
@@ -38,7 +51,7 @@ npm run lint
 npm run build      # static site in out/
 ```
 
-The site is a Next.js static export (App Router, React, TypeScript). `src/app` holds the two pages, `src/components`
+The site is a Next.js static export (App Router, React, TypeScript). `src/app` holds the pages, `src/components`
 their UI, `src/lib` the logic, and `src/workers` the encoder's worker. `public/overlay` is the overlay page itself, which
 OBS loads; it's a built copy of MichaelAccount1's Rewind Overlay (MIT) plus `ww-plus.js`.
 

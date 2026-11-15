@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation';
 const PAGES = [
   { href: '/', label: 'Overlay' },
   { href: '/music-pack/', label: 'Music Pack' },
+  { href: '/common-szs/', label: 'common.szs' },
 ] as const;
 
-/** Switches between the site's two tools. */
+/** Switches between the site's tools. */
 export function SiteNav() {
   const path = usePathname();
   const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href.replace(/\/$/, '')));

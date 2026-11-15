@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import '@/styles/site.css';
 import '@/styles/music.css';
+import '@/styles/szs.css';
 import { themeBootScript } from '@/lib/siteTheme';
 
 export const metadata: Metadata = {
