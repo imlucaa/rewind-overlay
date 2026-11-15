@@ -120,6 +120,14 @@ const STOCK_RACE: Record<number, string> = {
   0x13: 'r_GC_Mountain32_n', 0x1c: 'r_64_Kuppa32_n',
 };
 
+// The 10 original battle arenas, by their ConfigBT.pul file stem. Retro Rewind ships no music under the stem, so the
+// game plays the unmodded file (and its _F for the last minute); a pack has to use these names to be heard.
+const STOCK_BATTLE: Record<string, string> = {
+  venice_battle: 'n_venice', skate_battle: 'n_skate', old_matenro_64: 'r_64_battle', old_battle3_gba: 'r_agb_battle',
+  old_house_ds: 'r_DS_battle', old_battle4_sfc: 'r_sfc_battle', block_battle: 'n_block', casino_battle: 'n_casino',
+  old_cookieland_gc: 'r_GC_Battle32', sand_battle: 'n_ryuusa',
+};
+
 const gameMusic = (): Track[] => [
   ...MENUS.map(([name, file, about]): Track => ({
     file, name, platform: '', variantOf: '', category: 'menu', finalFile: null, hasOwnMusic: true, about,
@@ -176,7 +184,8 @@ export function parseTrackList(tsv: string): TrackList {
   for (const row of rows) {
     const category = CONFIGS[row.config];
     if (!category) continue;
-    const file = existing(row.stem + '_N', row.stem + '_n') ?? row.stem + '_N';
+    const stockBattle = category === 'battle' ? STOCK_BATTLE[row.stem] : undefined;
+    const file = stockBattle ? stockBattle + '_n' : existing(row.stem + '_N', row.stem + '_n') ?? row.stem + '_N';
     if (seen.has(file)) continue;
     seen.add(file);
     const version = versionName(row.name);
@@ -189,8 +198,8 @@ export function parseTrackList(tsv: string): TrackList {
       variantOf: version ? mainName(row.name) : '',
       category: original ? 'original' : category,
       ...(original && row.variant === 0 && STOCK_RACE[row.slot] ? { stockFile: STOCK_RACE[row.slot] } : {}),
-      finalFile: existing(row.stem + '_Final', row.stem + '_F'),
-      hasOwnMusic: music.has(file),
+      finalFile: stockBattle ? stockBattle + '_F' : existing(row.stem + '_Final', row.stem + '_F'),
+      hasOwnMusic: !!stockBattle || music.has(file),
     });
   }
   const platformIndex = (p: string): number => {

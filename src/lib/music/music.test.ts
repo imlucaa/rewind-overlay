@@ -137,3 +137,10 @@ test('original names add the game file names for the 32 originals, for CTGP', ()
   assert.ok(names.includes('n_Farm_f.brstm'));
   assert.ok(jobs.flatMap(j => j.files).some(f => f.name === retro.file + '.brstm'));
 });
+
+test('the 10 original battle arenas export under the game file names, with _F for the last minute', () => {
+  const names = list.tracks.filter(t => t.category === 'battle').flatMap(t => filesFor(t).map(f => f.name));
+  for (const stock of ['n_venice', 'n_skate', 'r_64_battle', 'r_agb_battle', 'r_DS_battle', 'r_sfc_battle', 'n_block', 'n_casino', 'r_GC_Battle32', 'n_ryuusa'])
+    for (const name of [stock + '_n.brstm', stock + '_F.brstm']) assert.ok(names.includes(name), name);
+  assert.ok(!names.some(n => n.startsWith('venice_battle')));
+});
