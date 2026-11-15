@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { DownloadIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
+import { toast } from 'sonner';
 import { useStoredState } from '@/hooks/useStoredState';
-import { AppShell, Tab } from '@/components/layout/AppShell';
-import { Magnetic } from '@/components/amicro/Magnetic';
-import { BounceDots } from '@/components/amicro/Loaders';
+import { AppShell, Reveal, Split, Tab } from '@/components/layout/AppShell';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useLibrary } from '@/hooks/useLibrary';
 import { usePack } from '@/hooks/usePack';
 import { usePreview } from '@/hooks/usePreview';
@@ -37,7 +39,11 @@ interface Place {
   focus: string | null;
 }
 const PLACE_KEY = 'rewind-music-place';
-const startPlace = (): Place => ({ view: 'library', selected: [], focus: null });
+const startPlace = (): Place => ({
+  view: 'library',
+  selected: [],
+  focus: null,
+});
 function parsePlace(text: string | null): Place {
   try {
     const raw = text ? JSON.parse(text) : null;
@@ -72,7 +78,10 @@ export function MusicPackApp({ tracks }: Props) {
   const focus = place.focus;
   const setFocus = (file: string | null) => setPlace(p => ({ ...p, focus: file }));
   const setSelected = (change: ReadonlySet<string> | ((current: ReadonlySet<string>) => ReadonlySet<string>)) =>
-    setPlace(p => ({ ...p, selected: [...(typeof change === 'function' ? change(new Set(p.selected)) : change)] }));
+    setPlace(p => ({
+      ...p,
+      selected: [...(typeof change === 'function' ? change(new Set(p.selected)) : change)],
+    }));
 
   const songsById = useMemo(() => new Map(library.songs.map(s => [s.id, s])), [library.songs]);
   const trackFiles = useMemo(() => new Set(tracks.map(t => t.file)), [tracks]);
@@ -103,7 +112,11 @@ export function MusicPackApp({ tracks }: Props) {
 
   const removeSong = (song: SongInfo) => {
     const used = usage.get(song.id) ?? 0;
-    if (used && !window.confirm(`${song.title} is on ${used} track${used === 1 ? '' : 's'}. Remove it, and put those tracks back to their original music?`)) return;
+    if (
+      used &&
+      !window.confirm(`${song.title} is on ${used} track${used === 1 ? '' : 's'}. Remove it, and put those tracks back to their original music?`)
+    )
+      return;
     if (preview.loadedKey?.endsWith(song.id)) preview.pause();
     void library.removeSong(song.id).then(() =>
       update(p => ({
@@ -120,7 +133,11 @@ export function MusicPackApp({ tracks }: Props) {
   /** Loads an assignments file (or a share link's) over the current choices; returns what happened. */
   const loadPackText = (text: string): string => {
     const result = packFromFile(text, library.songs, trackFiles);
-    update(p => ({ ...result.pack, target: p.target, originalNames: p.originalNames }));
+    update(p => ({
+      ...result.pack,
+      target: p.target,
+      originalNames: p.originalNames,
+    }));
     const count = Object.keys(result.pack.assignments).length;
     const skipped = [
       result.missing ? `${result.missing} whose song you don’t have` : '',
@@ -208,8 +225,6 @@ export function MusicPackApp({ tracks }: Props) {
 
   return (
     <AppShell
-      className="music"
-      viewKey={view}
       tabsLabel="Music pack"
       tabs={VIEWS.map(([v, label]) => (
         <Tab key={v} current={view === v} onSelect={() => setView(v)}>
@@ -217,133 +232,151 @@ export function MusicPackApp({ tracks }: Props) {
         </Tab>
       ))}
       status={
-        <span className="stats">
-          <b>{library.songs.length}</b> song{library.songs.length === 1 ? '' : 's'} · <b>{assignedTracks.length}</b> of {tracks.length} tracks with your music
+        <span>
+          <b className="text-foreground font-medium">{library.songs.length}</b> song{library.songs.length === 1 ? '' : 's'} in your library,{' '}
+          <b className="text-foreground font-medium">{assignedTracks.length}</b> of {tracks.length} tracks with your music
         </span>
       }
       actions={
         <>
-          <button className="button hide-small" type="button" onClick={undo} disabled={!canUndo} aria-label="Undo">
-            Undo
-          </button>
-          <button className="button hide-small" type="button" onClick={redo} disabled={!canRedo} aria-label="Redo">
-            Redo
-          </button>
-          <Magnetic>
-            <button className="button primary" type="button" disabled={exporter.busy || !songsToEncode} onClick={exportAll}>
-              {exporter.busy ? (
-                <>
-                  Exporting <BounceDots />
-                </>
-              ) : (
-                'Download pack'
-              )}
-            </button>
-          </Magnetic>
+          <Button variant="ghost" size="icon" aria-label="Undo" onClick={undo} disabled={!canUndo}>
+            <Undo2Icon aria-hidden="true" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Redo" onClick={redo} disabled={!canRedo}>
+            <Redo2Icon aria-hidden="true" />
+          </Button>
+          <Button disabled={exporter.busy || !songsToEncode} onClick={exportAll}>
+            {exporter.busy ? <Spinner data-icon="inline-start" /> : <DownloadIcon data-icon="inline-start" aria-hidden="true" />}
+            {exporter.busy ? 'Making the pack' : 'Download pack'}
+          </Button>
         </>
       }
-      asideLabel={view === 'tracks' ? 'Selected track' : 'Pack'}
-      aside={
-        <>
-          {view === 'tracks' ? (
-            <TrackInspector
-              tracks={selectedTracks}
-              assignments={pack.assignments}
+      dock={<NowPlaying preview={preview} />}
+    >
+      <Split
+        sideLabel={view === 'tracks' ? 'Selected track' : 'Pack'}
+        side={
+          <Reveal id={view === 'tracks' ? 'track' : 'pack'} className="flex flex-col gap-4">
+            {view === 'tracks' ? (
+              <TrackInspector
+                tracks={selectedTracks}
+                assignments={pack.assignments}
+                songs={library.songs}
+                songsById={songsById}
+                preview={preview}
+                busy={exporter.busy}
+                update={update}
+                onDownload={exportTrack}
+                empty={summary}
+                onAddSong={library.addSong}
+              />
+            ) : (
+              summary
+            )}
+            {view !== 'export' ? <ExportProgress status={exporter.status} /> : null}
+          </Reveal>
+        }
+      >
+        <Reveal id={view}>
+          {view === 'library' ? (
+            <LibraryView
               songs={library.songs}
-              songsById={songsById}
+              tracks={tracks}
+              usage={usage}
+              assignments={pack.assignments}
+              onAssign={(songId, track) =>
+                update(p => {
+                  const current = p.assignments[track.file];
+                  const next = current
+                    ? {
+                        ...current,
+                        songId,
+                        loop: current.songId === songId ? current.loop : null,
+                      }
+                    : newAssignment(songId);
+                  return {
+                    ...p,
+                    assignments: { ...p.assignments, [track.file]: next },
+                  };
+                })
+              }
+              onUnassign={track =>
+                update(p => {
+                  const assignments = { ...p.assignments };
+                  delete assignments[track.file];
+                  return { ...p, assignments };
+                })
+              }
               preview={preview}
-              busy={exporter.busy}
-              update={update}
-              onDownload={exportTrack}
-              empty={summary}
-              onAddSong={library.addSong}
+              storageError={library.error}
+              onImport={library.importFiles}
+              importProgress={packImport.progress}
+              onImportPack={async files => {
+                const result = await packImport.run(files);
+                update(p => ({
+                  ...p,
+                  assignments: { ...p.assignments, ...result.assignments },
+                }));
+                return result.summary;
+              }}
+              onReplace={library.replaceSong}
+              onRemove={removeSong}
+            />
+          ) : view === 'tracks' ? (
+            <TracksView
+              tracks={tracks}
+              assignments={pack.assignments}
+              songs={songsById}
+              query={query}
+              filter={filter}
+              selected={selected}
+              focus={focus}
+              onQuery={setQuery}
+              onFilter={setFilter}
+              onSelect={select}
+              onSelectMany={files => setSelected(new Set(files))}
             />
           ) : (
-            summary
+            <ExportView
+              packName={pack.packName}
+              target={pack.target}
+              onTarget={target => update(p => ({ ...p, target }))}
+              originalNames={pack.originalNames}
+              onOriginalNames={originalNames => update(p => ({ ...p, originalNames }))}
+              trackCount={assignedTracks.length}
+              fileCount={fileCount}
+              songCount={songsToEncode}
+              problems={plan.problems}
+              status={exporter.status}
+              onRename={name => update(p => ({ ...p, packName: name }), 'name')}
+              onExport={exportAll}
+              onSaveFile={() =>
+                download(
+                  new Blob([packToFile(pack, library.songs)], {
+                    type: 'application/json',
+                  }),
+                  `${safeFileName(pack.packName)}.json`,
+                )
+              }
+              onLoadFile={loadPackText}
+              onEvenLoudness={evenLoudness}
+              onShare={async () => {
+                const link = await shareLink(packToFile(pack, library.songs), location.href);
+                try {
+                  await navigator.clipboard.writeText(link);
+                } catch {
+                  window.prompt('Copy this link:', link);
+                }
+                return 'Share link copied. Whoever opens it needs the same song files; they’re matched by file name and size.';
+              }}
+              onResetAll={() => {
+                update(p => ({ ...p, assignments: {} }));
+                toast('Every track has its original music again', { action: { label: 'Undo', onClick: undo } });
+              }}
+            />
           )}
-          {view !== 'export' ? <ExportProgress status={exporter.status} /> : null}
-          <NowPlaying preview={preview} />
-        </>
-      }
-    >
-      {view === 'library' ? (
-        <LibraryView
-          songs={library.songs}
-          tracks={tracks}
-          usage={usage}
-          assignments={pack.assignments}
-          onAssign={(songId, track) =>
-            update(p => {
-              const current = p.assignments[track.file];
-              const next = current ? { ...current, songId, loop: current.songId === songId ? current.loop : null } : newAssignment(songId);
-              return { ...p, assignments: { ...p.assignments, [track.file]: next } };
-            })
-          }
-          onUnassign={track =>
-            update(p => {
-              const assignments = { ...p.assignments };
-              delete assignments[track.file];
-              return { ...p, assignments };
-            })
-          }
-          preview={preview}
-          storageError={library.error}
-          onImport={library.importFiles}
-          importProgress={packImport.progress}
-          onImportPack={async files => {
-            const result = await packImport.run(files);
-            update(p => ({ ...p, assignments: { ...p.assignments, ...result.assignments } }));
-            return result.summary;
-          }}
-          onReplace={library.replaceSong}
-          onRemove={removeSong}
-        />
-      ) : view === 'tracks' ? (
-        <TracksView
-          tracks={tracks}
-          assignments={pack.assignments}
-          songs={songsById}
-          query={query}
-          filter={filter}
-          selected={selected}
-          focus={focus}
-          onQuery={setQuery}
-          onFilter={setFilter}
-          onSelect={select}
-          onSelectMany={files => setSelected(new Set(files))}
-        />
-      ) : (
-        <ExportView
-          packName={pack.packName}
-          target={pack.target}
-          onTarget={target => update(p => ({ ...p, target }))}
-          originalNames={pack.originalNames}
-          onOriginalNames={originalNames => update(p => ({ ...p, originalNames }))}
-          trackCount={assignedTracks.length}
-          fileCount={fileCount}
-          songCount={songsToEncode}
-          problems={plan.problems}
-          status={exporter.status}
-          onRename={name => update(p => ({ ...p, packName: name }), 'name')}
-          onExport={exportAll}
-          onSaveFile={() => download(new Blob([packToFile(pack, library.songs)], { type: 'application/json' }), `${safeFileName(pack.packName)}.json`)}
-          onLoadFile={loadPackText}
-          onEvenLoudness={evenLoudness}
-          onShare={async () => {
-            const link = await shareLink(packToFile(pack, library.songs), location.href);
-            try {
-              await navigator.clipboard.writeText(link);
-            } catch {
-              window.prompt('Copy this link:', link);
-            }
-            return 'Share link copied. Whoever opens it needs the same song files; they’re matched by file name and size.';
-          }}
-          onResetAll={() => {
-            if (window.confirm('Put every track back to its original music? You can press Undo to get them back.'))
-              update(p => ({ ...p, assignments: {} }));
-          }}
-        />
-      )}
+        </Reveal>
+      </Split>
     </AppShell>
   );
 }

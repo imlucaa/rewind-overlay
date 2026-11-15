@@ -1,8 +1,13 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select as SelectRoot, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider as SliderRoot } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 
-// The form controls of the original settings page, styled by site.css.
+// The settings form controls, on shadcn/ui. A Row puts a label (and an optional hint under it) beside its control.
 
 interface RowProps {
   label: string;
@@ -12,14 +17,19 @@ interface RowProps {
 
 export function Row({ label, hint, children }: RowProps) {
   return (
-    <div className="row">
-      <div className="label" title={hint}>
-        <strong>{label}</strong>
-        {hint ? <small>{hint}</small> : null}
+    <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b py-2.5 last:border-b-0">
+      <div className="min-w-0 flex-1 basis-48">
+        <div className="text-sm font-medium">{label}</div>
+        {hint ? <p className="text-muted-foreground text-xs leading-snug">{hint}</p> : null}
       </div>
-      {children}
+      <div className="flex min-w-0 shrink-0 items-center gap-2">{children}</div>
     </div>
   );
+}
+
+/** A group of Rows, in a bordered box. */
+export function Rows({ children }: { children: ReactNode }) {
+  return <div className="bg-card rounded-lg border px-4">{children}</div>;
 }
 
 interface ToggleProps {
@@ -29,7 +39,7 @@ interface ToggleProps {
 }
 
 export function Toggle({ checked, onChange, label }: ToggleProps) {
-  return <input type="checkbox" className="switch" aria-label={label} checked={checked} onChange={e => onChange(e.target.checked)} />;
+  return <Switch aria-label={label} checked={checked} onCheckedChange={onChange} />;
 }
 
 interface SliderProps {
@@ -44,9 +54,9 @@ interface SliderProps {
 
 export function Slider({ value, min, max, step, unit, label, onChange }: SliderProps) {
   return (
-    <div className="slider">
-      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} />
-      <output>
+    <div className="flex w-56 max-w-full items-center gap-3">
+      <SliderRoot aria-label={label} min={min} max={max} step={step} value={[value]} onValueChange={([v]) => onChange(v)} />
+      <output className="text-muted-foreground w-14 shrink-0 text-right text-sm tabular-nums">
         {value}
         {unit}
       </output>
@@ -60,7 +70,7 @@ interface ColorProps {
   onChange: (value: string) => void;
 }
 
-/** A picker and a text box; the text box only commits a full #rrggbb. */
+/** A swatch picker and a hex box; the box only commits a full #rrggbb. */
 export function ColorField({ value, label, onChange }: ColorProps) {
   const [draft, setDraft] = useState(value);
   const [shown, setShown] = useState(value);
@@ -70,13 +80,20 @@ export function ColorField({ value, label, onChange }: ColorProps) {
     setDraft(value);
   }
   return (
-    <div className="color">
-      <input type="color" aria-label={label} value={value} onChange={e => onChange(e.target.value)} />
+    <div className="flex items-center gap-2">
       <input
-        type="text"
+        type="color"
+        aria-label={label}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="border-input size-8 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5"
+      />
+      <Input
         aria-label={`${label} hex`}
         placeholder="#rrggbb"
+        spellCheck={false}
         value={draft}
+        className="w-24 font-mono text-xs"
         onChange={e => {
           setDraft(e.target.value);
           if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) onChange(e.target.value);
@@ -94,15 +111,21 @@ interface SelectProps<T extends string> {
 }
 
 export function Select<T extends string>({ value, options, label, onChange }: SelectProps<T>) {
-  const id = useId();
   return (
-    <select id={id} aria-label={label} value={value} onChange={e => onChange(e.target.value as T)}>
-      {options.map(([v, text]) => (
-        <option key={v} value={v}>
-          {text}
-        </option>
-      ))}
-    </select>
+    <SelectRoot value={value} onValueChange={v => onChange(v as T)}>
+      <SelectTrigger aria-label={label} className="w-48 max-w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {options.map(([v, text]) => (
+            <SelectItem key={v} value={v}>
+              {text}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </SelectRoot>
   );
 }
 
@@ -114,5 +137,13 @@ interface TextProps {
 }
 
 export function TextField({ value, placeholder, label, onChange }: TextProps) {
-  return <input type="text" aria-label={label} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} />;
+  const id = useId();
+  return (
+    <>
+      <Label htmlFor={id} className="sr-only">
+        {label}
+      </Label>
+      <Input id={id} placeholder={placeholder} value={value} className="w-56 max-w-full" onChange={e => onChange(e.target.value)} />
+    </>
+  );
 }

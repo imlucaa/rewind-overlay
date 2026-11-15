@@ -1,15 +1,28 @@
 'use client';
 
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { AppShell, Tab } from '@/components/layout/AppShell';
-import { Magnetic } from '@/components/amicro/Magnetic';
-import { SwapText } from '@/components/amicro/SwapText';
-import { Row, Select, Slider } from '@/components/ui/controls';
+import { AppShell, Reveal, Split, Tab } from '@/components/layout/AppShell';
+import { CheckIcon, ExternalLinkIcon, LinkIcon, PlayIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { SwapIcon } from '@/components/ui/swap-icon';
+import { Row, Rows, Slider } from '@/components/ui/controls';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useStoredState } from '@/hooks/useStoredState';
 import { overlayUrl } from '@/lib/overlay/link';
 import { SECTIONS } from '@/lib/overlay/sections';
 import {
-  STORE_KEY, applyStyle, defaults, isComplete, isHud, load, missingMessage, resetLook, setPath, unitLabel, type Settings,
+  STORE_KEY,
+  applyStyle,
+  defaults,
+  isComplete,
+  isHud,
+  load,
+  missingMessage,
+  resetLook,
+  setPath,
+  unitLabel,
+  type Settings,
 } from '@/lib/overlay/settings';
 import { siteRoot } from '@/lib/paths';
 import { SettingControl } from './SettingControl';
@@ -50,7 +63,8 @@ export function OverlayEditor() {
     }
     try {
       await navigator.clipboard.writeText(url);
-      setNote('Paste it into an OBS Browser source (1920 × 1080).');
+      setNote('');
+      toast.success('Link copied', { description: 'Paste it into an OBS Browser source (1920 × 1080).' });
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -60,71 +74,17 @@ export function OverlayEditor() {
 
   const ms = settings.animations.durationMs;
   const playGain = current.playsGain
-    ? { gain: settings.preview.gain, ms, everyMs: isHud(settings) ? 4000 : Math.max(4000, ms + 2800) }
+    ? {
+        gain: settings.preview.gain,
+        ms,
+        everyMs: isHud(settings) ? 4000 : Math.max(4000, ms + 2800),
+      }
     : null;
 
-  return (
-    <AppShell
-      viewKey={current.title}
-      tabsLabel="Settings"
-      tabs={sections.map(s => (
-        <Tab key={s.title} current={s === current} onSelect={() => setCurrentTitle(s.title)}>
-          {s.title}
-        </Tab>
-      ))}
-      actions={
-        <>
-          <a className="button hide-small" href={url ?? '#'} target="_blank" rel="noopener" aria-disabled={!url}>
-            Open
-          </a>
-          <Magnetic>
-            <button className="button primary" type="button" onClick={copy}>
-              <SwapText text={copied ? 'Copied' : 'Copy link'} />
-            </button>
-          </Magnetic>
-        </>
-      }
-      asideLabel="Preview"
-      aside={
-        <>
-          <OverlayPreview url={url} emptyMessage={ready ? missingMessage(settings) : ''} playGain={playGain} playRef={playRef} backdrop={backdrop} />
-          {url ? (
-            <div className="rows test-race">
-              <Row label="Test race" hint={unitLabel(settings, 'See how a VR change looks')}>
-                <div className="test-race-buttons">
-                  {[25, 100, 300, -40].map(g => (
-                    <button
-                      key={g}
-                      className="chip"
-                      type="button"
-                      onClick={() => {
-                        change('preview.gain', g);
-                        playRef.current?.(g, ms);
-                      }}
-                    >
-                      {g > 0 ? '+' + g : '−' + -g}
-                    </button>
-                  ))}
-                  <button className="button primary" type="button" onClick={() => playRef.current?.(settings.preview.gain, ms)}>
-                    ▶ Test race
-                  </button>
-                </div>
-              </Row>
-              <Row label={unitLabel(settings, 'VR gained')}>
-                <Slider label={unitLabel(settings, 'VR gained')} value={settings.preview.gain} min={-100} max={300} step={1} unit={unitLabel(settings, ' VR')} onChange={v => change('preview.gain', v)} />
-              </Row>
-              <Row label="Background" hint="Only here, not in OBS">
-                <Select label="Background" value={backdrop} options={BACKDROPS} onChange={setBackdrop} />
-              </Row>
-            </div>
-          ) : null}
-          <p className="note" role="status">
-            {note}
-          </p>
-        </>
-      }
-    >
-      <div className="rows" key={current.title}>
+  const settingsPanel = (
+    <Reveal id={current.title} className="flex flex-col gap-4">
+      <h2 className="sr-only">{current.title}</h2>
+      <Rows key={current.title}>
         {current.rows
           .filter(r => !r.when || r.when(settings))
           .map(r => {
@@ -140,17 +100,118 @@ export function OverlayEditor() {
               />
             );
             return r.control.kind === 'style' ? (
-              <div key={r.label}>{control}</div>
+              <div key={r.label} className="py-3">
+                {control}
+              </div>
             ) : (
-              <Row key={r.label + r.control.kind + ('path' in r.control ? r.control.path : '')} label={label} hint={r.hint && unitLabel(settings, r.hint)}>
+              <Row
+                key={r.label + r.control.kind + ('path' in r.control ? r.control.path : '')}
+                label={label}
+                hint={r.hint && unitLabel(settings, r.hint)}
+              >
                 {control}
               </Row>
             );
           })}
-      </div>
-      <button className="link-button" type="button" onClick={() => setSettings(resetLook)}>
+      </Rows>
+      <Button variant="link" className="text-muted-foreground self-start px-0" onClick={() => setSettings(resetLook)}>
         Reset look
-      </button>
+      </Button>
+    </Reveal>
+  );
+
+  return (
+    <AppShell
+      tabsLabel="Settings"
+      tabs={sections.map(s => (
+        <Tab key={s.title} current={s === current} onSelect={() => setCurrentTitle(s.title)}>
+          {s.title}
+        </Tab>
+      ))}
+      actions={
+        <>
+          {url ? (
+            <Button variant="outline" asChild>
+              <a href={url} target="_blank" rel="noopener">
+                <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
+                Open overlay
+              </a>
+            </Button>
+          ) : null}
+          <Button onClick={copy}>
+            <SwapIcon active={copied} on={<CheckIcon />} off={<LinkIcon />} />
+            {copied ? 'Copied' : 'Copy link for OBS'}
+          </Button>
+        </>
+      }
+    >
+      <Split side={settingsPanel} sideLabel="Settings" sidePosition="start" pinned="main">
+        {/* The stage: the overlay as OBS will show it, with the race test right under it. */}
+        <OverlayPreview url={url} emptyMessage={ready ? missingMessage(settings) : ''} playGain={playGain} playRef={playRef} backdrop={backdrop} />
+        {/* The preview already says what's missing, so only other notes show here. */}
+        <p className="text-muted-foreground text-sm empty:hidden" role="status">
+          {url ? note : ''}
+        </p>
+        {url ? (
+          <div className="flex flex-col gap-4 rounded-lg border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <h2 className="text-sm font-medium">Test race</h2>
+                <p className="text-muted-foreground text-xs">{unitLabel(settings, 'Play a race result on the preview')}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[25, 100, 300, -40].map(g => (
+                  <Button
+                    key={g}
+                    variant="outline"
+                    size="sm"
+                    className="tabular-nums"
+                    aria-label={`Play a ${g > 0 ? '+' + g : '−' + -g} result`}
+                    onClick={() => {
+                      change('preview.gain', g);
+                      playRef.current?.(g, ms);
+                    }}
+                  >
+                    {g > 0 ? '+' + g : '−' + -g}
+                  </Button>
+                ))}
+                <Button size="sm" onClick={() => playRef.current?.(settings.preview.gain, ms)}>
+                  <PlayIcon data-icon="inline-start" aria-hidden="true" />
+                  Play again
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <Slider
+                label={unitLabel(settings, 'VR gained')}
+                value={settings.preview.gain}
+                min={-100}
+                max={300}
+                step={1}
+                unit={unitLabel(settings, ' VR')}
+                onChange={v => change('preview.gain', v)}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs">Background (preview only)</span>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  size="sm"
+                  value={backdrop}
+                  onValueChange={v => v && setBackdrop(v as Backdrop)}
+                  aria-label="Preview background"
+                >
+                  {BACKDROPS.map(([v, text]) => (
+                    <ToggleGroupItem key={v} value={v}>
+                      {text}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Split>
     </AppShell>
   );
 }

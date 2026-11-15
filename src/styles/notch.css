@@ -1,0 +1,231 @@
+/*
+ * The tool island: a solid notch hanging from the top edge, with curved "ears" where it meets the edge. At rest it
+ * shows the open tool's name; hovering it (or tabbing into it) swells the notch and opens every name, one after
+ * another, on spring curves. The springs are CSS linear() curves, so there's no animation script.
+ */
+@property --notch-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 18px;
+}
+@property --notch-height {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 44px;
+}
+
+@layer components {
+  .notch {
+    --notch-fill: color-mix(in oklab, var(--foreground) 9%, var(--background));
+    --open: 0.62s;
+    --close: 0.46s;
+    --settle: 0.14s;
+    --intent: 40ms;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: max-content;
+    height: var(--notch-height);
+    padding: 0 7px 2px;
+    background: var(--notch-fill);
+    border-radius: 0 0 var(--notch-radius) var(--notch-radius);
+    transition-property: --notch-height, --notch-radius, padding, box-shadow;
+    transition-duration: var(--close);
+    transition-timing-function: var(--spring-smooth);
+    transition-delay: var(--settle);
+  }
+  .notch:is(:hover, :focus-within) {
+    --notch-height: 48px;
+    --notch-radius: 21px;
+    padding-inline: 9px;
+    box-shadow: 0 10px 20px -14px rgb(0 0 0 / 0.7);
+    transition-duration: var(--open);
+    transition-timing-function: var(--spring-bouncy);
+    transition-delay: var(--intent);
+  }
+  /* The ears: inverted corners that blend the notch into the top edge. */
+  .notch::before,
+  .notch::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: var(--notch-radius);
+    height: var(--notch-radius);
+    pointer-events: none;
+  }
+  .notch::before {
+    right: calc(100% - 1px);
+    background: radial-gradient(circle at 0 100%, transparent calc(var(--notch-radius) - 0.5px), var(--notch-fill) var(--notch-radius));
+  }
+  .notch::after {
+    left: calc(100% - 1px);
+    background: radial-gradient(circle at 100% 100%, transparent calc(var(--notch-radius) - 0.5px), var(--notch-fill) var(--notch-radius));
+  }
+
+  .notch-link {
+    /* --offset and --reach come from the markup: names open left to right and close right to left. */
+    --delay-in: calc(var(--intent) + var(--offset) * 28ms);
+    --delay-out: calc(var(--settle) + (var(--reach) - var(--offset)) * 22ms);
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    padding-inline: 11px;
+    border-radius: 999px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    transition:
+      background-color 0.22s var(--ease-standard),
+      color 0.22s var(--ease-standard);
+  }
+  .notch-link[aria-current] {
+    color: var(--foreground);
+  }
+  .notch-link:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--foreground) 40%, transparent);
+    outline-offset: 1px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .notch-link:hover {
+      color: var(--foreground);
+      background-color: color-mix(in oklab, var(--foreground) 6%, transparent);
+      transition-duration: 70ms;
+    }
+    .notch-link[aria-current]:hover {
+      background-color: transparent;
+    }
+    .notch-link:active {
+      background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
+    }
+  }
+  /* The open tool's pill: grows in on a spring when you arrive. */
+  .notch-pill {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-color: color-mix(in oklab, var(--foreground) 12%, transparent);
+    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.12);
+    opacity: 0;
+    scale: 0.86;
+    transition-property: opacity, scale;
+    transition-duration: var(--open);
+    transition-timing-function: var(--spring-bouncy);
+  }
+  .notch-link[aria-current] .notch-pill {
+    opacity: 1;
+    scale: 1;
+  }
+  .notch-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    transition: scale 90ms var(--ease-standard);
+  }
+  .notch-link:active .notch-icon {
+    scale: 0.88;
+  }
+  .notch-label {
+    display: block;
+    max-inline-size: 0;
+    overflow: hidden;
+    transition: max-inline-size var(--close) var(--spring-smooth) var(--delay-out);
+  }
+  .notch-label-text {
+    display: block;
+    padding-inline-start: 6px;
+    opacity: 0;
+    filter: blur(5px);
+    translate: -6px;
+    scale: 0.82;
+    transform-origin: 0;
+    transition-property: opacity, filter, translate, scale;
+    transition-duration: calc(var(--close) * 0.6), var(--close), var(--close), var(--close);
+    transition-timing-function: var(--ease-standard), var(--spring-smooth), var(--spring-smooth), var(--spring-smooth);
+    transition-delay: var(--delay-out);
+  }
+  .notch-link[aria-current] .notch-label,
+  .notch:is(:hover, :focus-within) .notch-label {
+    max-inline-size: 8rem;
+    transition: max-inline-size var(--open) var(--spring-smooth) var(--delay-in);
+  }
+  .notch-link[aria-current] .notch-label-text,
+  .notch:is(:hover, :focus-within) .notch-label-text {
+    opacity: 1;
+    filter: none;
+    translate: 0;
+    scale: 1;
+    transition-duration: calc(var(--open) * 0.5), var(--open), var(--open), var(--open);
+    transition-timing-function: var(--ease-standard), var(--spring-smooth), var(--spring-bouncy), var(--spring-bouncy);
+    transition-delay: calc(var(--delay-in) + 60ms), var(--delay-in), var(--delay-in), var(--delay-in);
+  }
+
+  /* Touch screens can't hover: names stay open. */
+  @media (hover: none) {
+    .notch-label {
+      max-inline-size: 8rem;
+    }
+    .notch-label-text {
+      opacity: 1;
+      filter: none;
+      translate: 0;
+      scale: 1;
+    }
+  }
+  /* Phones: only the open tool's name, so the notch fits. */
+  @media (max-width: 639px) {
+    .notch,
+    .notch:is(:hover, :focus-within) {
+      --notch-radius: 16px;
+      --notch-height: 42px;
+      padding: 0 6px 2px;
+      box-shadow: none;
+      transition: none;
+    }
+    .notch-link {
+      min-height: 30px;
+      padding-inline: 10px;
+    }
+    .notch-label,
+    .notch:is(:hover, :focus-within) .notch-label {
+      max-inline-size: 0;
+    }
+    .notch-label-text,
+    .notch:is(:hover, :focus-within) .notch-label-text {
+      opacity: 0;
+    }
+    .notch-link[aria-current] .notch-label {
+      max-inline-size: 8rem;
+    }
+    .notch-link[aria-current] .notch-label-text {
+      opacity: 1;
+      filter: none;
+      translate: 0;
+      scale: 1;
+    }
+  }
+}
+
+/* Tabbing into the notch from the keyboard opens the names at once: keyboard moves should never wait on animation. */
+@layer components {
+  .notch:focus-within:not(:hover),
+  .notch:focus-within:not(:hover) * {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Touch screens: a tap leaves :hover stuck on, so the notch doesn't swell there (the names are already open). */
+@media (hover: none) {
+  .notch:is(:hover, :focus-within) {
+    --notch-height: 44px;
+    --notch-radius: 18px;
+    padding-inline: 7px;
+    box-shadow: none;
+  }
+}

@@ -1,5 +1,10 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useEffect, useRef, useState } from 'react';
 import { songBlob } from '@/lib/music/library';
 import { SAMPLE_RATE, type LoopPoints } from '@/lib/music/pack';
@@ -93,21 +98,23 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
     }
     const { min, max } = peaks.current;
     const style = getComputedStyle(c);
-    const accent = style.getPropertyValue('--accent').trim() || '#7c9cff';
-    const soft = style.getPropertyValue('--soft').trim() || '#666';
+    const accent = style.getPropertyValue('--foreground').trim() || '#888';
+    const soft = style.getPropertyValue('--muted-foreground').trim() || '#666';
     const toX = (s: number) => (s / duration) * width;
     const a = toX(shownStart), b = toX(shownEnd);
     const mid = HEIGHT / 2;
     g.clearRect(0, 0, width, HEIGHT);
-    g.fillStyle = accent + '22';
+    g.globalAlpha = 0.1;
+    g.fillStyle = accent;
     g.fillRect(a, 0, b - a, HEIGHT);
+    g.globalAlpha = 1;
     for (let x = 0; x < width; x++) {
       g.fillStyle = x >= a && x <= b ? accent : soft;
       const top = mid - max[x] * mid * 0.95;
       g.fillRect(x, top, 1, Math.max(1, (max[x] - min[x]) * mid * 0.95));
     }
     for (const x of [a, b]) {
-      g.fillStyle = '#fff';
+      g.fillStyle = accent;
       g.fillRect(Math.min(width - 2, Math.max(0, x - 1)), 0, 2, HEIGHT);
       g.fillRect(Math.min(width - 8, Math.max(0, x - 4)), 0, 8, 10);
     }
@@ -117,7 +124,7 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
     }
   }, [wave, shownStart, shownEnd, duration, playhead, songId]);
 
-  if (!wave || !shown) return <p className="note loop-status">{status}</p>;
+  if (!wave || !shown) return <p className="text-muted-foreground text-sm">{status}</p>;
 
   const clamp = (l: LoopPoints, moved: 'start' | 'end'): LoopPoints => {
     let { start, end } = l;
@@ -168,14 +175,15 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
 
   const candidates = found?.songId === songId ? found.loops : [];
 
+
   return (
-    <div className="loop-editor">
-      <p className="note explain">When the song reaches the end line it jumps back to the start line. Drag the white lines, or press Find loop.</p>
+    <div className="flex flex-col gap-3">
+      <p className="text-muted-foreground text-sm">When the song reaches the end line it jumps back to the start line. Drag the lines, or press Find loop.</p>
       <canvas
         ref={canvas}
-        className="loop-wave"
+        className="bg-muted w-full cursor-ew-resize touch-none rounded-md border"
         style={{ height: HEIGHT }}
-        aria-label="Song waveform. Drag the white edges to set where the loop starts and ends."
+        aria-label="Song waveform. Drag the lines to set where the loop starts and ends."
         onPointerDown={e => {
           const t = timeAt(e.clientX);
           drag.current = Math.abs(t - shown.start) <= Math.abs(t - shown.end) ? 'start' : 'end';
@@ -192,63 +200,72 @@ export function LoopEditor({ songId, loop, playhead, onChange, onHearJump }: Pro
           setDraft(null);
         }}
       />
-      <div className="loop-times">
-        <label>
-          Start
-          <input
+      <FieldGroup className="flex-row flex-wrap items-end gap-3">
+        <Field className="w-28">
+          <FieldLabel htmlFor={`${songId}-loop-start`}>Start (s)</FieldLabel>
+          <Input
+            id={`${songId}-loop-start`}
             type="number"
             min={0}
             step={0.01}
+            className="tabular-nums"
             value={shown.start.toFixed(2)}
             onChange={e => e.target.value && commit(clamp({ ...shown, start: Number(e.target.value) }, 'start'))}
           />
-        </label>
-        <label>
-          End
-          <input
+        </Field>
+        <Field className="w-28">
+          <FieldLabel htmlFor={`${songId}-loop-end`}>End (s)</FieldLabel>
+          <Input
+            id={`${songId}-loop-end`}
             type="number"
             min={0}
             step={0.01}
+            className="tabular-nums"
             value={shown.end.toFixed(2)}
             onChange={e => e.target.value && commit(clamp({ ...shown, end: Number(e.target.value) }, 'end'))}
           />
-        </label>
-        <span className="loop-length">
-          {formatTime(shown.start)} → {formatTime(shown.end)} · loops {formatDuration(shown.end - shown.start)}
+        </Field>
+        <span className="text-muted-foreground pb-2 text-sm tabular-nums">
+          {formatTime(shown.start)} to {formatTime(shown.end)} · loops {formatDuration(shown.end - shown.start)}
         </span>
-      </div>
-      <div className="loop-actions">
-        <button className="button" type="button" disabled={finding} onClick={() => void findLoops()}>
-          {finding ? 'Finding…' : 'Find loop'}
-        </button>
-        <button className="button" type="button" disabled={!loop} onClick={snapEnd} title="Moves the end line a tiny bit so the jump back sounds smooth">
+      </FieldGroup>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" disabled={finding} onClick={() => void findLoops()}>
+          {finding ? <Spinner data-icon="inline-start" /> : null}
+          {finding ? 'Finding' : 'Find loop'}
+        </Button>
+        <Button variant="outline" disabled={!loop} onClick={snapEnd} title="Moves the end line a tiny bit so the jump back sounds smooth">
           Smooth the jump
-        </button>
-        <button className="button" type="button" onClick={() => onHearJump(shown)}>
+        </Button>
+        <Button variant="outline" onClick={() => onHearJump(shown)}>
           Hear the jump back
-        </button>
-        <button className="link-button" type="button" disabled={!loop} onClick={() => onChange(null)}>
+        </Button>
+        <Button variant="ghost" disabled={!loop} onClick={() => onChange(null)}>
           Repeat whole song
-        </button>
+        </Button>
       </div>
       {candidates.length > 1 ? (
-        <ul className="loop-candidates" aria-label="Loops found">
-          {candidates.map((c, i) => {
-            const current = !!loop && Math.abs(loop.start - round(c.start)) < 0.01 && Math.abs(loop.end - round(c.end)) < 0.01;
-            return (
-              <li key={i}>
-                <button type="button" aria-pressed={current} onClick={() => commit(clamp(c, 'end'))}>
-                  <span>
-                    {formatTime(c.start)} → {formatTime(c.end)}
-                  </span>
-                  <small>{Math.round(c.score * 100)}% smooth</small>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          spacing={1}
+          aria-label="Loops found"
+          className="flex flex-wrap justify-start"
+          value={String(candidates.findIndex(c => !!loop && Math.abs(loop.start - round(c.start)) < 0.01 && Math.abs(loop.end - round(c.end)) < 0.01))}
+          onValueChange={v => v && commit(clamp(candidates[Number(v)], 'end'))}
+        >
+          {candidates.map((c, i) => (
+            <ToggleGroupItem key={i} value={String(i)} className="h-auto flex-col items-start py-1.5 tabular-nums">
+              <span>
+                {formatTime(c.start)} to {formatTime(c.end)}
+              </span>
+              <small className="text-muted-foreground font-normal">{Math.round(c.score * 100)}% smooth</small>
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       ) : null}
-      {status ? <p className="note loop-status">{status}</p> : null}
+      {status ? <p className="text-muted-foreground text-sm">{status}</p> : null}
     </div>
   );
 }

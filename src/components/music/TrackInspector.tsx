@@ -9,9 +9,14 @@ import type { SongInfo } from '@/lib/music/library';
 import type { PackState } from '@/lib/music/packState';
 import { formatDuration } from '@/lib/music/format';
 import type { Preview } from '@/hooks/usePreview';
-import { Row, Select, Slider, Toggle } from '@/components/ui/controls';
+import { Row, Rows, Select, Slider, Toggle } from '@/components/ui/controls';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
+import { Slider as SliderRoot } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 import { PlayButton } from './LibraryView';
-import { TextReveal } from '@/components/amicro/TextReveal';
 import { LoopEditor } from './LoopEditor';
 
 interface Props {
@@ -117,8 +122,7 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
 
   return (
     <div
-      className="inspector"
-      data-dragging={dragging}
+      className={cn('relative flex flex-col gap-4', dragging && 'rounded-lg outline-2 outline-offset-4 outline-dashed')}
       onDragOver={e => {
         if (![...e.dataTransfer.types].includes('Files')) return;
         e.preventDefault();
@@ -142,82 +146,91 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
       }}
     >
       {dragging ? (
-        <div className="drop-here" aria-hidden="true">
+        <div className="bg-background/90 absolute inset-0 z-10 grid place-items-center rounded-lg text-sm font-medium" aria-hidden="true">
           Drop to put it on {single ? single.name : `${tracks.length} tracks`}
         </div>
       ) : null}
-      <header>
-        <TextReveal text={single ? single.name : `${tracks.length} tracks`} />
+      <header className="flex flex-col gap-1">
+        <h2 className="text-base font-semibold">{single ? single.name : `${tracks.length} tracks`}</h2>
         {single ? (
-          <small>
+          <small className="text-muted-foreground text-xs break-all">
             {filesFor(single, first).map(f => f.name).join(' + ')}
             {single.variantOf ? ` · version of ${single.variantOf}` : ''}
             {single.hasOwnMusic ? '' : ' · uses another track’s music in Retro Rewind'}
             {single.playsOnce ? ' · plays once' : ''}
           </small>
         ) : (
-          <small>Changes here apply to all of them.</small>
+          <small className="text-muted-foreground text-xs">Changes here apply to all of them.</small>
         )}
-        {single?.about ? <p className="note">{single.about}</p> : null}
+        {single?.about ? <p className="text-muted-foreground text-sm">{single.about}</p> : null}
       </header>
 
-      {/* An empty track picks its song from the cards below; the dropdown comes back once it has one. */}
+      {/* An empty track picks its song from the list below; the dropdown comes back once it has one. */}
       {assigned.length ? (
-        <div className="rows">
-          <Row label="Song">
-            <Select label="Song" value={songValue} options={songOptions} onChange={v => v !== 'mixed' && setSong(v)} />
-          </Row>
-          {missingSong ? <p className="warn">This track’s song was removed from your songs. Pick another.</p> : null}
+        <div className="flex flex-col gap-4">
+          <Rows>
+            <Row label="Song">
+              <Select label="Song" value={songValue} options={songOptions} onChange={v => v !== 'mixed' && setSong(v)} />
+            </Row>
+          </Rows>
+          {missingSong ? (
+            <Alert variant="destructive">
+              <AlertDescription>This track’s song was removed from your songs. Pick another.</AlertDescription>
+            </Alert>
+          ) : null}
           {first ? (
             <>
-              <Row label="Speed" hint={`1.00x is normal. ${MIN_SPEED.toFixed(2)}x to ${MAX_SPEED.toFixed(2)}x`}>
-                <div className="speed">
-                  <input
-                    type="range"
-                    aria-label="Speed"
-                    min={MIN_SPEED}
-                    max={MAX_SPEED}
-                    step={0.01}
-                    value={first.speed}
-                    onChange={e => setAll({ speed: clampSpeed(Number(e.target.value)) }, 'speed')}
+              <Rows>
+                <Row label="Speed" hint={`1.00x is normal. ${MIN_SPEED.toFixed(2)}x to ${MAX_SPEED.toFixed(2)}x`}>
+                  <div className="flex items-center gap-2">
+                    <SliderRoot
+                      aria-label="Speed"
+                      className="w-32"
+                      min={MIN_SPEED}
+                      max={MAX_SPEED}
+                      step={0.01}
+                      value={[first.speed]}
+                      onValueChange={([v]) => setAll({ speed: clampSpeed(v) }, 'speed')}
+                    />
+                    <Input
+                      type="number"
+                      aria-label="Speed value"
+                      className="w-20 tabular-nums"
+                      min={MIN_SPEED}
+                      max={MAX_SPEED}
+                      step={0.01}
+                      value={first.speed}
+                      onChange={e => e.target.value && setAll({ speed: clampSpeed(Number(e.target.value)) }, 'speed')}
+                    />
+                    <Button variant="ghost" size="sm" disabled={first.speed === 1} onClick={() => setAll({ speed: 1 }, 'speed-reset')}>
+                      Reset
+                    </Button>
+                  </div>
+                </Row>
+                <Row label="Keep pitch" hint={first.keepPitch ? 'Speed changes, the notes sound the same' : 'Faster sounds higher, slower sounds deeper'}>
+                  <Toggle label="Keep pitch" checked={first.keepPitch} onChange={v => setAll({ keepPitch: v }, 'pitch')} />
+                </Row>
+                <Row label="Volume" hint="Louder or quieter than the song is now">
+                  <Slider label="Volume" value={first.volumeDb} min={-12} max={12} step={1} unit=" dB" onChange={v => setAll({ volumeDb: v }, 'volume')} />
+                </Row>
+                <Row label="Skip the start" hint="Cuts a slow intro off the beginning">
+                  <Slider
+                    label="Skip the start"
+                    value={first.trimStart ?? 0}
+                    min={0}
+                    max={Math.max(1, Math.min(60, Math.floor(song?.duration ?? 60) - 5))}
+                    step={0.5}
+                    unit=" s"
+                    onChange={v => setAll({ trimStart: v }, 'trim')}
                   />
-                  <input
-                    type="number"
-                    aria-label="Speed value"
-                    min={MIN_SPEED}
-                    max={MAX_SPEED}
-                    step={0.01}
-                    value={first.speed}
-                    onChange={e => e.target.value && setAll({ speed: clampSpeed(Number(e.target.value)) }, 'speed')}
-                  />
-                  <button className="link-button" type="button" disabled={first.speed === 1} onClick={() => setAll({ speed: 1 }, 'speed-reset')}>
-                    Reset
-                  </button>
-                </div>
-              </Row>
-              <Row label="Keep pitch" hint={first.keepPitch ? 'Speed changes, the notes sound the same' : 'Faster sounds higher, slower sounds deeper'}>
-                <Toggle label="Keep pitch" checked={first.keepPitch} onChange={v => setAll({ keepPitch: v }, 'pitch')} />
-              </Row>
-              <Row label="Volume" hint="Louder or quieter than the song is now">
-                <Slider label="Volume" value={first.volumeDb} min={-12} max={12} step={1} unit=" dB" onChange={v => setAll({ volumeDb: v }, 'volume')} />
-              </Row>
-              <Row label="Skip the start" hint="Cuts a slow intro off the beginning">
-                <Slider
-                  label="Skip the start"
-                  value={first.trimStart ?? 0}
-                  min={0}
-                  max={Math.max(1, Math.min(60, Math.floor(song?.duration ?? 60) - 5))}
-                  step={0.5}
-                  unit=" s"
-                  onChange={v => setAll({ trimStart: v }, 'trim')}
-                />
-              </Row>
-              <Row label="Fade in" hint="Starts quiet and gets louder">
-                <Slider label="Fade in" value={first.fadeIn ?? 0} min={0} max={10} step={0.5} unit=" s" onChange={v => setAll({ fadeIn: v }, 'fade')} />
-              </Row>
+                </Row>
+                <Row label="Fade in" hint="Starts quiet and gets louder">
+                  <Slider label="Fade in" value={first.fadeIn ?? 0} min={0} max={10} step={0.5} unit=" s" onChange={v => setAll({ fadeIn: v }, 'fade')} />
+                </Row>
+              </Rows>
               {single && song && loops ? (
-                <>
-                  <h3 className="inspector-section">Loop</h3>
+                <section className="flex flex-col gap-2">
+                  <h3 className="text-sm font-semibold">Loop</h3>
                   <LoopEditor
                     key={single.file + first.songId}
                     songId={first.songId}
@@ -226,26 +239,32 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
                     onChange={loop => setAll({ loop }, 'loop')}
                     onHearJump={loop => void preview.play(key, first.songId, single.name, { ...first, loop }, loop.end - 4 * first.speed)}
                   />
-                </>
+                </section>
               ) : null}
               {hasLaps ? (
-                <>
-                  <h3 className="inspector-section">Last lap</h3>
-                  <Row label="Last lap song" hint={finalValue === SAME ? 'The same song keeps playing, a bit faster' : 'Switches to this song on the last lap'}>
-                    <Select label="Last lap song" value={finalValue} options={finalOptions} onChange={v => v !== 'mixed' && setFinalSong(v)} />
-                  </Row>
-                  {first.finalSongId && !finalSong ? <p className="warn">The last lap song was removed from your songs, so the last lap plays the main song.</p> : null}
-                  <Row label="Last lap speed" hint="How much faster the last lap plays">
-                    <Select
-                      label="Last lap speed"
-                      value={String(first.finalSpeed)}
-                      options={FINAL_SPEED_CHOICES.map(([speed, text]) => [String(speed), text] as [string, string])}
-                      onChange={v => setAll({ finalSpeed: Number(v) }, 'final')}
-                    />
-                  </Row>
-                </>
+                <section className="flex flex-col gap-2">
+                  <h3 className="text-sm font-semibold">Last lap</h3>
+                  <Rows>
+                    <Row label="Last lap song" hint={finalValue === SAME ? 'The same song keeps playing, a bit faster' : 'Switches to this song on the last lap'}>
+                      <Select label="Last lap song" value={finalValue} options={finalOptions} onChange={v => v !== 'mixed' && setFinalSong(v)} />
+                    </Row>
+                    <Row label="Last lap speed" hint="How much faster the last lap plays">
+                      <Select
+                        label="Last lap speed"
+                        value={String(first.finalSpeed)}
+                        options={FINAL_SPEED_CHOICES.map(([speed, text]) => [String(speed), text] as [string, string])}
+                        onChange={v => setAll({ finalSpeed: Number(v) }, 'final')}
+                      />
+                    </Row>
+                  </Rows>
+                  {first.finalSongId && !finalSong ? (
+                    <Alert variant="destructive">
+                      <AlertDescription>The last lap song was removed from your songs, so the last lap plays the main song.</AlertDescription>
+                    </Alert>
+                  ) : null}
+                </section>
               ) : (
-                <p className="note">Menus and fanfares have no last lap, so there’s no last lap song here. Pick a race track or battle arena for that.</p>
+                <p className="text-muted-foreground text-sm">Menus and fanfares have no last lap, so there’s no last lap song here. Pick a race track or battle arena for that.</p>
               )}
             </>
           ) : null}
@@ -253,79 +272,82 @@ export function TrackInspector({ tracks, assignments, songs, songsById, preview,
       ) : null}
 
       {dropMessage ? (
-        <p className="note" role="status">
+        <p className="text-muted-foreground text-sm" role="status">
           {dropMessage}
         </p>
       ) : null}
       {!assigned.length ? (
-        <div className="quick-songs">
-          <h3 className="inspector-section">Your songs</h3>
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold">Your songs</h3>
           {songs.length ? (
             <>
               {songs.length > 6 ? (
-                <input type="search" aria-label="Search your songs" placeholder="Search your songs" value={songQuery} onChange={e => setSongQuery(e.target.value)} />
+                <Input type="search" aria-label="Search your songs" placeholder="Search your songs" value={songQuery} onChange={e => setSongQuery(e.target.value)} />
               ) : null}
-              <ul>
+              <ItemGroup className="gap-1">
                 {songs
                   .filter(s => `${s.title} ${s.artist}`.toLowerCase().includes(songQuery.trim().toLowerCase()))
                   .map(s => {
                     const songKey = 'song:' + s.id;
                     const on = preview.playing === songKey;
                     return (
-                      <li key={s.id}>
-                        <PlayButton playing={on} label={s.title} onToggle={() => (on ? preview.pause() : void preview.play(songKey, s.id, s.title))} />
-                        <button type="button" className="quick-song" onClick={() => setSong(s.id)}>
-                          <span>
-                            <strong>{s.title}</strong>
-                            <small>{[s.artist, formatDuration(s.duration)].filter(Boolean).join(' · ')}</small>
-                          </span>
-                          <em>Use</em>
-                        </button>
-                      </li>
+                      <Item key={s.id} variant="outline" size="sm">
+                        <ItemMedia>
+                          <PlayButton playing={on} label={s.title} onToggle={() => (on ? preview.pause() : void preview.play(songKey, s.id, s.title))} />
+                        </ItemMedia>
+                        <ItemContent className="min-w-0">
+                          <ItemTitle className="w-full truncate">{s.title}</ItemTitle>
+                          <ItemDescription>{[s.artist, formatDuration(s.duration)].filter(Boolean).join(' · ')}</ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                          <Button size="sm" variant="secondary" aria-label={`Use ${s.title} here`} onClick={() => setSong(s.id)}>
+                            Use
+                          </Button>
+                        </ItemActions>
+                      </Item>
                     );
                   })}
-              </ul>
+              </ItemGroup>
             </>
           ) : null}
-          <p className="note">{songs.length ? 'Click a song to use it here, or drop a music file on this panel.' : 'Drop a music file on this panel to add it and use it here.'}</p>
-        </div>
+          <p className="text-muted-foreground text-sm">
+            {songs.length ? 'Pick Use on a song, or drop a music file on this panel.' : 'Drop a music file on this panel to add it and use it here.'}
+          </p>
+        </section>
       ) : null}
 
-      <div className="inspector-actions">
+      <div className="flex flex-wrap items-center gap-2">
         {single && first && !missingSong ? (
           <>
             <PlayButton playing={playing} label={single.name} onToggle={() => (playing ? preview.pause() : void preview.play(key, first.songId, single.name, first))} />
             {hasLaps ? (
-              <button
-                className="button"
-                type="button"
+              <Button
+                variant="outline"
                 onClick={() =>
-                  playingLap3
-                    ? preview.pause()
-                    : void preview.play(lap3Key, finalSong?.id ?? first.songId, `${single.name} · last lap`, lap3Preview(first))
+                  playingLap3 ? preview.pause() : void preview.play(lap3Key, finalSong?.id ?? first.songId, `${single.name} · last lap`, lap3Preview(first))
                 }
               >
                 {playingLap3 ? 'Stop last lap' : 'Hear last lap'}
-              </button>
+              </Button>
             ) : null}
-            <button className="button" type="button" disabled={busy} onClick={() => onDownload(single)}>
+            <Button variant="outline" disabled={busy} onClick={() => onDownload(single)}>
               Download just this track
-            </button>
+            </Button>
           </>
         ) : null}
         {songs.length > 0 ? (
-          <button className="button" type="button" onClick={randomSongs}>
+          <Button variant="outline" onClick={randomSongs}>
             {tracks.length > 1 ? 'Random songs' : 'Random song'}
-          </button>
+          </Button>
         ) : null}
         {assigned.length ? (
-          <button className="link-button" type="button" onClick={() => setSong(ORIGINAL)}>
+          <Button variant="ghost" onClick={() => setSong(ORIGINAL)}>
             Back to original music
-          </button>
+          </Button>
         ) : null}
       </div>
       {single && first && song ? (
-        <p className="note">
+        <p className="text-muted-foreground text-sm">
           {first.loop
             ? `Plays ${formatDuration((first.loop.end - (first.trimStart ?? 0)) / first.speed)}, then repeats the last ${formatDuration((first.loop.end - Math.max(first.loop.start, first.trimStart ?? 0)) / first.speed)}.`
             : `Plays ${formatDuration((song.duration - (first.trimStart ?? 0)) / first.speed)}, then starts again from the beginning.`}

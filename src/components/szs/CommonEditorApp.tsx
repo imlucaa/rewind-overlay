@@ -1,13 +1,27 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { AppShell, Tab } from '@/components/layout/AppShell';
+import { FolderOpenIcon, RotateCcwIcon, SaveIcon } from 'lucide-react';
+import { AppShell, Reveal, Split, Tab } from '@/components/layout/AppShell';
 import { download } from '@/hooks/useExport';
 import { isYaz0, yaz0Decode, yaz0Encode } from '@/lib/szs/yaz0';
 import { readU8, writeU8, type U8Node } from '@/lib/szs/u8';
 import { fromHex, groupColors, readBreff, recolorGroup, toHex, type Effect, type Rgb } from '@/lib/szs/breff';
 import { EFFECT_GROUPS, groupOf, type EffectGroup } from '@/lib/szs/effectGroups';
 import { readBreft, writeBreft, type Breft, type Texture } from '@/lib/szs/breft';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { HoldButton } from '@/components/ui/hold-button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import { TexturesView } from './TexturesView';
 
 const SECTIONS = [...new Set(EFFECT_GROUPS.map(g => g.section))];
@@ -70,7 +84,15 @@ export function CommonEditorApp() {
   const shown = useMemo(() => {
     if (!original) return new Map<string, { now: Rgb[]; after: Rgb[] }>();
     const after = applyPicks(original, byGroup, picks);
-    return new Map(EFFECT_GROUPS.map(g => [g.id, { now: groupColors(original, byGroup.get(g.id) ?? []), after: groupColors(after, byGroup.get(g.id) ?? []) }]));
+    return new Map(
+      EFFECT_GROUPS.map(g => [
+        g.id,
+        {
+          now: groupColors(original, byGroup.get(g.id) ?? []),
+          after: groupColors(after, byGroup.get(g.id) ?? []),
+        },
+      ]),
+    );
   }, [original, byGroup, picks]);
 
   const open = async (file: File | undefined) => {
@@ -97,7 +119,11 @@ export function CommonEditorApp() {
   const setPick = (id: string, change: Partial<Pick> | null) => {
     setPicks(current => {
       const next = { ...current };
-      if (change) next[id] = { ...(current[id] ?? { hex: '', keepWhite: false }), ...change };
+      if (change)
+        next[id] = {
+          ...(current[id] ?? { hex: '', keepWhite: false }),
+          ...change,
+        };
       else delete next[id];
       return next;
     });
@@ -111,10 +137,18 @@ export function CommonEditorApp() {
     setTimeout(() => {
       try {
         const nodes = archive.nodes.slice();
-        nodes[archive.breff] = { ...nodes[archive.breff], data: applyPicks(original, byGroup, picks) };
-        if (textureFile && texturesChanged) nodes[archive.breft] = { ...nodes[archive.breft], data: writeBreft({ ...textureFile, textures }) };
+        nodes[archive.breff] = {
+          ...nodes[archive.breff],
+          data: applyPicks(original, byGroup, picks),
+        };
+        if (textureFile && texturesChanged)
+          nodes[archive.breft] = {
+            ...nodes[archive.breft],
+            data: writeBreft({ ...textureFile, textures }),
+          };
         download(new Blob([yaz0Encode(writeU8(nodes))]), archive.name);
         setDirty(false);
+        toast.success(`Saved ${archive.name}`, { description: 'Put it in your game or mod in place of the old one.' });
       } catch (err) {
         setError(`Couldn’t save: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
@@ -133,34 +167,52 @@ export function CommonEditorApp() {
     const main = colors?.now[0];
     const valid = pick ? fromHex(pick.hex) : null;
     const strip = (colors?.after ?? []).slice(0, STRIP);
+    const id = `fx-${group.id}`;
     return (
-      <li key={group.id} className="fx-card" data-changed={valid ? true : undefined}>
-        <label className="fx-swatch" title="Pick a color">
-          <input
-            type="color"
-            aria-label={`${group.label} color`}
-            disabled={!count}
-            value={valid ? toHex(valid) : main ? toHex(main) : '#000000'}
-            onChange={e => setPick(group.id, { hex: e.target.value })}
-          />
-          {/* The file's own main color, in the corner, once a new one is picked. */}
-          {valid && main ? <i style={{ background: toHex(main) }} title={`Was ${toHex(main)}`} /> : null}
-        </label>
-        <div className="fx-body">
-          <div className="fx-head">
-            <strong title={`${count} effects in the game file`}>{group.label}</strong>
-            {pick ? (
-              <button type="button" className="fx-reset" aria-label={`Reset ${group.label}`} title="Back to the file's colors" onClick={() => setPick(group.id, null)}>
-                Reset
-              </button>
-            ) : null}
-          </div>
-          <p className="fx-about" title={group.about}>
-            {group.about}
-          </p>
-          <div className="fx-pick">
+      <Card key={group.id} size="sm" className={cn('gap-3', valid && 'ring-foreground/40')}>
+        <CardHeader className="grid-cols-[auto_1fr_auto] items-start gap-x-3">
+          {/* The swatch is the game color itself, so it keeps its own color in either site theme. */}
+          <label className="border-input relative size-11 shrink-0 cursor-pointer overflow-hidden rounded-md border" title="Pick a color">
             <input
-              type="text"
+              type="color"
+              aria-label={`${group.label} color`}
+              disabled={!count}
+              value={valid ? toHex(valid) : main ? toHex(main) : '#000000'}
+              onChange={e => setPick(group.id, { hex: e.target.value })}
+              className="absolute -inset-2 size-[calc(100%+1rem)] cursor-pointer border-0 p-0"
+            />
+            {/* The file's own main color, in the corner, once a new one is picked. */}
+            {valid && main ? (
+              <i
+                className="ring-card pointer-events-none absolute right-0 bottom-0 size-3.5 rounded-tl ring-1"
+                style={{ background: toHex(main) }}
+                title={`Was ${toHex(main)}`}
+              />
+            ) : null}
+          </label>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <CardTitle className="truncate" title={`${count} effects in the game file`}>
+              {group.label}
+            </CardTitle>
+            <CardDescription className="line-clamp-2 text-xs" title={group.about}>
+              {group.about}
+            </CardDescription>
+          </div>
+          {pick ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-label={`Reset ${group.label}`}
+              title="Back to the file's colors"
+              onClick={() => setPick(group.id, null)}
+            >
+              Reset
+            </Button>
+          ) : null}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <Input
               spellCheck={false}
               aria-label={`${group.label} hex`}
               aria-invalid={pick?.hex && !valid ? true : undefined}
@@ -168,74 +220,91 @@ export function CommonEditorApp() {
               disabled={!count}
               value={pick?.hex ?? ''}
               onChange={e => setPick(group.id, { hex: e.target.value })}
+              className="w-28 font-mono text-xs"
             />
-            <label title="Leave near-white parts, like a spark's bright core, as they are">
-              <input type="checkbox" checked={pick?.keepWhite ?? false} disabled={!count} onChange={e => setPick(group.id, { keepWhite: e.target.checked })} />
-              Keep white parts
-            </label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`${id}-white`}
+                checked={pick?.keepWhite ?? false}
+                disabled={!count}
+                onCheckedChange={v => setPick(group.id, { keepWhite: v === true })}
+              />
+              <Label
+                htmlFor={`${id}-white`}
+                className="text-muted-foreground font-normal"
+                title="Leave near-white parts, like a spark's bright core, as they are"
+              >
+                Keep white parts
+              </Label>
+            </div>
           </div>
-        </div>
-        <span className="fx-strip" aria-label={`Colors in its ${count} effects: ${strip.map(toHex).join(', ')}`}>
-          {strip.map(c => (
-            <i key={toHex(c)} style={{ background: toHex(c) }} title={toHex(c)} />
-          ))}
-        </span>
-      </li>
+          <span
+            className="flex h-2 overflow-hidden rounded-full border"
+            aria-label={`Colors in its ${count} effects: ${strip.map(toHex).join(', ')}`}
+          >
+            {strip.map((c, i) => (
+              <i key={i} className="flex-1 transition-[background-color] duration-200 ease-(--ease-out)" style={{ background: toHex(c) }} title={toHex(c)} />
+            ))}
+          </span>
+        </CardContent>
+      </Card>
     );
   };
 
   const changedIn = (sec: Section) =>
-    sec === 'textures' ? texturesChanged : EFFECT_GROUPS.filter(g => (sec === 'all' || g.section === sec) && picks[g.id] && fromHex(picks[g.id].hex)).length;
+    sec === 'textures'
+      ? texturesChanged
+      : EFFECT_GROUPS.filter(g => (sec === 'all' || g.section === sec) && picks[g.id] && fromHex(picks[g.id].hex)).length;
 
   return (
     <AppShell
-      className="music szs"
-      viewKey={section}
       tabsLabel="Effect groups"
       tabs={(['all', ...SECTIONS, ...(textures.length ? ['textures'] : [])] as Section[]).map(sec => (
         <Tab key={sec} current={section === sec} onSelect={() => setSection(sec)}>
           {sec === 'all' ? 'All effects' : sec === 'textures' ? 'Textures' : sec}
-          {changedIn(sec) ? <span className="fx-tab-count">{changedIn(sec)}</span> : null}
+          {changedIn(sec) ? (
+            <Badge variant="secondary" className="tabular-nums" aria-label={`${changedIn(sec)} changed`}>
+              {changedIn(sec)}
+            </Badge>
+          ) : null}
         </Tab>
       ))}
       status={
-        <span className="stats">
-          {archive ? (
-            <>
-              <b>{archive.name}</b> · {changed} group{changed === 1 ? '' : 's'} recolored · {texturesChanged} texture{texturesChanged === 1 ? '' : 's'} replaced
-              {dirty ? ' · not saved' : ''}
-            </>
-          ) : (
-            'No file open'
-          )}
-        </span>
+        archive ? (
+          <span>
+            <b className="text-foreground font-medium">{archive.name}</b>
+            {dirty ? ', changes not saved' : ''}
+          </span>
+        ) : undefined
       }
       actions={
         <>
           {changed || texturesChanged ? (
-            <button
-              className="button hide-small"
-              type="button"
-              onClick={() => {
-                if (window.confirm('Put every color and texture back to the file’s own?')) {
-                  setPicks({});
-                  setTextures(textureFile?.textures ?? []);
-                }
+            <HoldButton
+              variant="ghost"
+              aria-label="Hold to put every color and texture back to the file’s own"
+              onConfirm={() => {
+                setPicks({});
+                setTextures(textureFile?.textures ?? []);
+                toast('Colors and textures reset', { description: 'Back to the file’s own.' });
               }}
             >
-              Reset all
-            </button>
+              <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
+              Hold to reset all
+            </HoldButton>
           ) : null}
-          <button className="button hide-small" type="button" onClick={() => browse.current?.click()}>
+          <Button variant="outline" onClick={() => browse.current?.click()}>
+            <FolderOpenIcon data-icon="inline-start" aria-hidden="true" />
             Open
-          </button>
-          <button className="button primary" type="button" disabled={!archive || saving} onClick={save}>
-            {saving ? 'Saving…' : 'Save common.szs'}
-          </button>
+          </Button>
+          <Button disabled={!archive || saving} onClick={save}>
+            {saving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" aria-hidden="true" />}
+            {saving ? 'Saving' : 'Save common.szs'}
+          </Button>
         </>
       }
     >
-      <div className="music-view">
+      <div className="flex flex-col gap-6">
         <input
           ref={browse}
           type="file"
@@ -247,15 +316,15 @@ export function CommonEditorApp() {
           }}
         />
         {error ? (
-          <p className="note warn" role="alert">
-            {error}
-          </p>
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>That file didn’t open</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : null}
 
         {!archive ? (
-          <div
-            className="dropzone"
-            data-dragging={dragging}
+          <Empty
+            className={cn('border border-dashed transition-colors', dragging && 'border-foreground bg-muted')}
             onDragOver={e => {
               e.preventDefault();
               setDragging(true);
@@ -267,43 +336,73 @@ export function CommonEditorApp() {
               void open(e.dataTransfer.files[0]);
             }}
           >
-            <strong>Drop a common.szs here</strong>
-            <small>Mario Kart Wii’s Race/Common.szs, or a mod’s copy of it. Nothing is uploaded.</small>
-            <button className="button" type="button" onClick={() => browse.current?.click()}>
-              Browse files
-            </button>
-          </div>
+            <EmptyHeader>
+              <EmptyTitle>Drop a common.szs here</EmptyTitle>
+              <EmptyDescription>
+                Mario Kart Wii’s Race/Common.szs, or a mod’s copy of it. It stays on your computer: nothing is uploaded.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button onClick={() => browse.current?.click()}>Choose common.szs</Button>
+            </EmptyContent>
+          </Empty>
         ) : section === 'textures' && textureFile ? (
-          <TexturesView
-            textures={textures}
-            original={textureFile.textures}
-            effects={effects}
-            onChange={(index, texture) => {
-              setTextures(current => current.map((t, i) => (i === index ? texture : t)));
-              setDirty(true);
-            }}
-            onUntint={ids => ids.forEach(id => setPick(id, { hex: '#ffffff' }))}
-          />
+          <Reveal id="textures">
+            <TexturesView
+              textures={textures}
+              original={textureFile.textures}
+              effects={effects}
+              onChange={(index, texture) => {
+                setTextures(current => current.map((t, i) => (i === index ? texture : t)));
+                setDirty(true);
+              }}
+              onUntint={ids => ids.forEach(id => setPick(id, { hex: '#ffffff' }))}
+            />
+          </Reveal>
         ) : (
-          <>
-            <ol className="fx-steps">
-              <li>
-                <b>Click a color square</b> and pick a new color. The bar under each card shows the colors it uses now.
-              </li>
-              <li>
-                <b>Save common.szs</b> (top right).
-              </li>
-              <li>
-                <b>Put the saved file in your game or mod</b> in place of the old one. Keep a copy of the old one in case you want it back.
-              </li>
-            </ol>
-            {SECTIONS.filter(sec => section === 'all' || sec === section).map(sec => (
-              <section key={sec} className="fx-section">
-                <h2 className="sub">{sec}</h2>
-                <ul className="fx-grid">{EFFECT_GROUPS.filter(g => g.section === sec).map(card)}</ul>
-              </section>
-            ))}
-          </>
+          <Split
+            sideLabel="Your file"
+            side={
+              <div className="flex flex-col gap-4 rounded-lg border p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-semibold tabular-nums">{changed}</span>
+                    <span className="text-muted-foreground text-xs">effect group{changed === 1 ? '' : 's'} recolored</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-semibold tabular-nums">{texturesChanged}</span>
+                    <span className="text-muted-foreground text-xs">texture{texturesChanged === 1 ? '' : 's'} replaced</span>
+                  </div>
+                </div>
+                <Separator />
+                <h2 className="text-sm font-medium">How to use it</h2>
+                <ol className="text-muted-foreground flex list-decimal flex-col gap-2 pl-5 text-sm">
+                  <li>
+                    <b className="text-foreground font-medium">Click a color square</b> and pick a new color. The bar under each card shows the colors
+                    it uses now.
+                  </li>
+                  <li>
+                    <b className="text-foreground font-medium">Save common.szs</b> (top right).
+                  </li>
+                  <li>
+                    <b className="text-foreground font-medium">Put the saved file in your game or mod</b> in place of the old one. Keep a copy of the
+                    old one in case you want it back.
+                  </li>
+                </ol>
+              </div>
+            }
+          >
+            <Reveal id={section} className="flex flex-col gap-6">
+              {SECTIONS.filter(sec => section === 'all' || sec === section).map(sec => (
+                <section key={sec} className="flex flex-col gap-3">
+                  <h2 className="text-base font-semibold">{sec}</h2>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
+                    {EFFECT_GROUPS.filter(g => g.section === sec).map(card)}
+                  </div>
+                </section>
+              ))}
+            </Reveal>
+          </Split>
         )}
       </div>
     </AppShell>

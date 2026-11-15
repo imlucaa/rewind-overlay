@@ -1,0 +1,109 @@
+/*
+ * Site motion: one load sequence (notch, then header, tabs and content in turn), the tab pill sliding to the clicked
+ * tab, and a short rise when a tab's content changes. The notch springs are CSS linear() curves.
+ * With reduced motion on, these become plain fades: no movement, no blur, no bounce.
+ */
+:root {
+  /* Strong curves: the built-in ones are too weak. ease-out for things entering and answering a press, ease-drawer
+     (iOS-like) for things moving on screen. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --spring-smooth: linear(0, 0.0604 4.2%, 0.1882 8.3%, 0.3329 12.5%, 0.4697 16.7%, 0.5883 20.8%, 0.6861 25%, 0.7639 29.2%, 0.8244 33.3%, 0.8706 37.5%, 0.9053 41.7%, 0.9312 45.8%, 0.9503 50%, 0.9642 54.2%, 0.9744 58.3%, 0.9817 62.5%, 0.987 66.7%, 0.9908 70.8%, 0.9935 75%, 0.9954 79.2%, 0.9967 83.3%, 0.9977 87.5%, 0.9984 91.7%, 0.9989 95.8%, 1);
+  --spring-bouncy: linear(0, 0.0286 2.8%, 0.1013 5.6%, 0.2013 8.3%, 0.3153 11.1%, 0.4331 13.9%, 0.5472 16.7%, 0.6524 19.4%, 0.7458 22.2%, 0.8257 25%, 0.8917 27.8%, 0.9443 30.6%, 0.9846 33.3%, 1.014 36.1%, 1.034 38.9%, 1.0464 41.7%, 1.0527 44.4%, 1.0543 47.2%, 1.0525 50%, 1.0484 52.8%, 1.0428 55.6%, 1.0366 58.3%, 1.0302 61.1%, 1.0241 63.9%, 1.0184 66.7%, 1.0134 69.4%, 1.0091 72.2%, 1.0056 75%, 1.0028 77.8%, 1.0007 80.6%, 0.9991 83.3%, 0.9981 86.1%, 0.9974 88.9%, 0.9971 91.7%, 0.9971 94.4%, 0.9972 97.2%, 1);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+    filter: blur(4px);
+  }
+}
+/* Small and quick: a tab's content changing happens many times a session. */
+@keyframes swap {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+    filter: blur(2px);
+  }
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    translate: 0 -100%;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@layer components {
+  /* The load sequence: --delay is set per element (header 0, tabs 60ms, content 100ms), uneven on purpose. */
+  .reveal {
+    animation: rise 0.45s var(--ease-out) both;
+    animation-delay: calc(80ms + var(--delay, 0ms));
+  }
+  /* A tab's content changing: no delay, it answers the click. */
+  .reveal[data-swap] {
+    animation: swap 0.2s var(--ease-out) both;
+  }
+  .notch {
+    animation: drop 0.7s var(--spring-bouncy) both;
+  }
+
+  /* The pill under the open tab, moved by AppShell to the open tab's place. */
+  .tab-pill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 0.5rem;
+    background: var(--background);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    /* Moving on screen, clicked often: quick, no bounce. */
+    transition:
+      translate 0.28s var(--ease-drawer),
+      width 0.28s var(--ease-drawer);
+  }
+  .dark .tab-pill {
+    background: color-mix(in oklab, var(--foreground) 12%, transparent);
+  }
+  /* First placement: no slide in from the left edge. */
+  .tab-pill[data-still] {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal[data-swap] {
+      animation: fade 0.25s var(--ease-standard) both;
+    }
+    .notch {
+      animation: fade 0.3s var(--ease-standard) both;
+    }
+    .tab-pill {
+      transition:
+        translate 0.25s var(--ease-standard),
+        width 0.25s var(--ease-standard);
+    }
+  }
+}
+
+
+/*
+ * Hold to confirm: the fill sweeps across in 1.5s while held (linear, so its progress reads as time), and snaps back
+ * in 200ms when released early. Kept under reduced motion: it is the only sign of how long is left to hold.
+ */
+@layer components {
+  .hold-fill {
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.2s var(--ease-out);
+  }
+  [data-holding] > .hold-fill {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 1.5s linear;
+  }
+}

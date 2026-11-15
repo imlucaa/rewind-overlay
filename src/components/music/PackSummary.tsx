@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { CATEGORY_LABELS, type Track, type TrackCategory } from '@/lib/music/tracks';
 import type { Assignments, Problem } from '@/lib/music/pack';
 import type { SongInfo } from '@/lib/music/library';
@@ -31,55 +33,63 @@ export function PackSummary({ packName, tracks, assignments, songs, problems, on
   const assigned = rows.reduce((n, r) => n + r.done, 0);
   // Only until the first track has a song; after that the bars say it all.
   const hint = !songs.length
-    ? 'Add songs (or import a pack you already have), then give them tracks.'
+    ? 'Add songs (or open a pack you already have), then give them tracks.'
     : !assigned
-      ? 'Open Tracks, pick a track and click one of your songs.'
+      ? 'Open Tracks, pick a track and choose one of your songs.'
       : '';
 
   return (
-    <div className="summary">
-      <h2>{packName}</h2>
-      {hint ? <p className="summary-next">{hint}</p> : null}
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-base font-semibold">{packName}</h2>
+        {hint ? <p className="text-muted-foreground text-sm">{hint}</p> : null}
+      </div>
       {!songs.length ? (
-        <button className="button" type="button" onClick={onSongs}>
+        <Button variant="outline" className="self-start" onClick={onSongs}>
           Go to Songs
-        </button>
+        </Button>
       ) : null}
 
-      <ul className="summary-bars" aria-label="Tracks with your music, by category">
+      <ul className="flex flex-col gap-1" aria-label="Tracks with your music, by category">
         {rows.map(r => (
           <li key={r.category}>
-            <button type="button" onClick={() => onCategory(r.category)}>
-              <span>{CATEGORY_LABELS[r.category]}</span>
-              <small>
-                {r.done} / {r.total}
-              </small>
-              <i style={{ ['--done' as string]: `${(r.done / r.total) * 100}%` }} aria-hidden="true" />
+            <button
+              type="button"
+              onClick={() => onCategory(r.category)}
+              className="hover:bg-muted focus-visible:ring-ring/50 flex w-full flex-col gap-1.5 rounded-md px-2 py-2 text-left outline-none focus-visible:ring-3"
+            >
+              <span className="flex items-baseline justify-between gap-3 text-sm">
+                {CATEGORY_LABELS[r.category]}
+                <small className="text-muted-foreground tabular-nums">
+                  {r.done} / {r.total}
+                </small>
+              </span>
+              <Progress value={(r.done / r.total) * 100} aria-label={`${CATEGORY_LABELS[r.category]}: ${r.done} of ${r.total} with your music`} />
             </button>
           </li>
         ))}
       </ul>
 
       {problems.length ? (
-        <>
-          <h3 className="inspector-section">Needs fixing</h3>
-          <ul className="summary-problems">
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold">Needs fixing</h3>
+          <ul className="flex flex-col gap-1.5 text-sm">
             {problems.map(p =>
               p.kind === 'long-song' ? (
                 <li key={'l' + p.song.id}>
-                  {p.song.title} plays for {formatDuration(p.seconds)}; over 10 minutes may not fit in the Wii’s memory.
+                  {p.song.title} plays for {formatDuration(p.seconds)}. Over 10 minutes may not fit in the Wii’s memory.
                 </li>
               ) : (
                 <li key={p.kind + p.track.file}>
-                  <button type="button" className="link-button" onClick={() => onTrack(p.track.file)}>
+                  <Button variant="link" className="h-auto p-0" onClick={() => onTrack(p.track.file)}>
                     {p.track.name}
-                  </button>
+                  </Button>
                   : {p.kind === 'missing-song' ? 'its song was removed' : 'its last lap song was removed'}
                 </li>
               ),
             )}
           </ul>
-        </>
+        </div>
       ) : null}
     </div>
   );

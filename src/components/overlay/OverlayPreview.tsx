@@ -1,10 +1,19 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { Skeleton } from '@/components/amicro/Loaders';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // The overlay lays out at least FRAME px wide, then is scaled down to the stage, so the card always fits.
 const FRAME = 760;
+
+// Grid: faint lines on near-black, so see-through parts of the overlay read as see-through, as they will in OBS.
+const BACKDROP_CLASS: Record<Backdrop, string> = {
+  grid: 'bg-[#0d0d0f] bg-[linear-gradient(#ffffff08_1px,transparent_1px),linear-gradient(90deg,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]',
+  black: 'bg-black',
+  white: 'bg-white',
+  green: 'bg-[#00b140]',
+};
 
 interface Props {
   /** The overlay link, or null while it can't be made (no friend code or name yet). */
@@ -80,11 +89,30 @@ export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop 
     return () => clearInterval(timer);
   }, [gain, ms, everyMs, src]);
 
+  const waiting = loading === src && !!url;
   return (
-    <div className="stage" ref={stage} data-backdrop={backdrop}>
-      <iframe ref={frame} src={src} title="Overlay preview" onLoad={() => setLoading(null)} />
-      {loading === src && url ? <Skeleton className="stage-skeleton" /> : null}
-      {url ? null : <p className="stage-empty">{emptyMessage}</p>}
+    <div ref={stage} className={cn('relative aspect-video overflow-hidden rounded-xl border', BACKDROP_CLASS[backdrop])}>
+      {/* color-scheme light keeps the frame see-through in dark mode, as in OBS. */}
+      <iframe
+        ref={frame}
+        src={src}
+        title="Overlay preview"
+        onLoad={() => setLoading(null)}
+        className={cn(
+          // Its transform is set from script (the scale), so only opacity and blur transition here.
+          'absolute top-0 left-0 size-full origin-top-left border-0 bg-transparent transition-[opacity,filter] duration-300 ease-(--ease-out) [color-scheme:light]',
+          waiting && 'opacity-0 blur-sm',
+        )}
+      />
+      {/* Stays mounted so it can fade out as the overlay fades in, rather than vanishing first. */}
+      <Skeleton
+        aria-label={waiting ? 'Loading the overlay' : undefined}
+        aria-hidden={!waiting}
+        className={cn('absolute inset-4 rounded-md transition-opacity duration-300 ease-(--ease-out)', !waiting && 'pointer-events-none opacity-0')}
+      />
+      {url || !emptyMessage ? null : (
+        <p className="pointer-events-none absolute inset-0 grid place-items-center p-5 text-center text-sm text-zinc-400">{emptyMessage}</p>
+      )}
     </div>
   );
 }
