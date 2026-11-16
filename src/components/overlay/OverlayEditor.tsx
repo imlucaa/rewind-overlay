@@ -37,6 +37,7 @@ export function OverlayEditor() {
   const [note, setNote] = useState('');
   const [copied, setCopied] = useState(false);
   const [backdrop, setBackdrop] = useState<Backdrop>('grid');
+  const [zoom, setZoom] = useState('1');
   const playRef = useRef<((gain: number, ms: number) => void) | null>(null);
   const root = useSyncExternalStore(noSubscribe, siteRoot, () => null);
 
@@ -147,7 +148,7 @@ export function OverlayEditor() {
     >
       <Split side={settingsPanel} sideLabel="Settings" sidePosition="start" pinned="main">
         {/* The stage: the overlay as OBS will show it, with the race test right under it. */}
-        <OverlayPreview url={url} emptyMessage={ready ? missingMessage(settings) : ''} playGain={playGain} playRef={playRef} backdrop={backdrop} />
+        <OverlayPreview url={url} emptyMessage={ready ? missingMessage(settings) : ''} playGain={playGain} playRef={playRef} backdrop={backdrop} zoom={Number(zoom)} />
         {/* The preview already says what's missing, so only other notes show here. */}
         <p className="text-muted-foreground text-sm empty:hidden" role="status">
           {url ? note : ''}
@@ -191,6 +192,14 @@ export function OverlayEditor() {
                 unit={unitLabel(settings, ' VR')}
                 onChange={v => change('preview.gain', v)}
               />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs">Zoom</span>
+                <ToggleGroup type="single" variant="outline" size="sm" value={zoom} onValueChange={v => v && setZoom(v)} aria-label="Preview zoom">
+                  <ToggleGroupItem value="1">Fit</ToggleGroupItem>
+                  <ToggleGroupItem value="1.5">1.5×</ToggleGroupItem>
+                  <ToggleGroupItem value="2">2×</ToggleGroupItem>
+                </ToggleGroup>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-xs">Background (preview only)</span>
                 <ToggleGroup

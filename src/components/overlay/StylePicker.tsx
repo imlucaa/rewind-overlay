@@ -57,7 +57,7 @@ export function StylePicker({ settings, onPick }: { settings: Settings; onPick: 
       className="grid w-full grid-cols-3 py-3"
     >
       {LOOKS.map(({ style, title, sub, look }) => (
-        <ToggleGroupItem key={style} value={style} className="group h-auto flex-col items-stretch gap-0 p-2 text-left data-[state=on]:border-foreground">
+        <ToggleGroupItem key={style} value={style} className="group h-auto flex-col items-stretch gap-0 p-2 text-left data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground data-[state=on]:ring-1 data-[state=on]:ring-foreground data-[state=on]:hover:bg-muted data-[state=on]:hover:text-foreground">
           <span className="mb-2 grid h-16 place-items-center overflow-hidden rounded-md bg-zinc-950 px-1.5">
             <span className="opacity-60 transition-opacity group-hover:opacity-90 group-data-[state=on]:opacity-100">{look}</span>
           </span>

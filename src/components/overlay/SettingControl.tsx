@@ -40,7 +40,15 @@ export function SettingControl({ control, label, settings, onChange, onBadge, on
     case 'text':
       return <TextField label={label} placeholder={control.placeholder} value={String(getPath(settings, control.path))} onChange={v => onChange(control.path, v)} />;
     case 'badge':
-      // Off, or which badge (Automatic follows the number).
-      return <Select label={label} value={settings.plus.rankBadge ? settings.plus.rankBadgeKind : 'off'} options={control.options} onChange={onBadge} />;
+      // Off, or which badge (Automatic follows the number). Automatic is stored as '', which the select treats as "no
+      // value" and shows blank, so it travels through the select as 'auto'.
+      return (
+        <Select
+          label={label}
+          value={settings.plus.rankBadge ? settings.plus.rankBadgeKind || 'auto' : 'off'}
+          options={control.options.map(([v, text]) => [v || 'auto', text] as const)}
+          onChange={v => onBadge(v === 'auto' ? '' : v)}
+        />
+      );
   }
 }

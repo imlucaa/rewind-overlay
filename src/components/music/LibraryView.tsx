@@ -77,7 +77,7 @@ export function LibraryView({ songs, tracks, usage, assignments, preview, storag
   return (
     <div className="flex flex-col gap-4">
       <Empty
-        className={cn('border border-dashed transition-colors', dragging && 'border-foreground bg-muted')}
+        className={cn('bg-card/60 border border-dashed transition-colors', dragging && 'border-foreground bg-muted')}
         onDragOver={e => {
           e.preventDefault();
           setDragging(true);

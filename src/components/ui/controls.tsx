@@ -17,10 +17,10 @@ interface RowProps {
 
 export function Row({ label, hint, children }: RowProps) {
   return (
-    <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b py-2.5 last:border-b-0">
+    <div className="flex min-h-14 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b py-3 last:border-b-0">
       <div className="min-w-0 flex-1 basis-48">
-        <div className="text-sm font-medium">{label}</div>
-        {hint ? <p className="text-muted-foreground text-xs leading-snug">{hint}</p> : null}
+        <div className="text-[15px] font-medium">{label}</div>
+        {hint ? <p className="text-muted-foreground mt-0.5 text-[13px] leading-snug">{hint}</p> : null}
       </div>
       <div className="flex min-w-0 shrink-0 items-center gap-2">{children}</div>
     </div>

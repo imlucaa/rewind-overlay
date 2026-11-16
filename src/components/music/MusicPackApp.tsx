@@ -245,10 +245,12 @@ export function MusicPackApp({ tracks }: Props) {
           <Button variant="ghost" size="icon" aria-label="Redo" onClick={redo} disabled={!canRedo}>
             <Redo2Icon aria-hidden="true" />
           </Button>
-          <Button disabled={exporter.busy || !songsToEncode} onClick={exportAll}>
-            {exporter.busy ? <Spinner data-icon="inline-start" /> : <DownloadIcon data-icon="inline-start" aria-hidden="true" />}
-            {exporter.busy ? 'Making the pack' : 'Download pack'}
-          </Button>
+          {songsToEncode || exporter.busy ? (
+            <Button disabled={exporter.busy} onClick={exportAll}>
+              {exporter.busy ? <Spinner data-icon="inline-start" /> : <DownloadIcon data-icon="inline-start" aria-hidden="true" />}
+              {exporter.busy ? 'Making the pack' : 'Download pack'}
+            </Button>
+          ) : null}
         </>
       }
       dock={<NowPlaying preview={preview} />}

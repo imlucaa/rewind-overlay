@@ -53,12 +53,13 @@
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
+    /* Darker than the default grey so hints still pass 4.5:1 on the grey page as well as on white panels. */
+    --muted-foreground: oklch(0.49 0 0);
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
+    --border: oklch(0.885 0 0);
+    --input: oklch(0.885 0 0);
     --ring: oklch(0.708 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
@@ -71,11 +72,12 @@
 .dark {
     --background: #000000;
     --foreground: oklch(0.985 0 0);
-    --card: #000000;
+    --card: oklch(0.16 0 0);
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: #ffffff;
+    /* Off-white, not pure white: same black-and-white look with less glare on the black page. */
+    --primary: #e8e8e8;
     --primary-foreground: #000000;
     --secondary: oklch(0.21 0 0);
     --secondary-foreground: oklch(0.985 0 0);
@@ -123,9 +125,9 @@
   /* Left out: the tool notch (short, small, answers the pointer), and the motion in styles/motion.css, which
      turns into plain fades itself. */
   @media (prefers-reduced-motion: reduce) {
-    :where(*:not(.notch, .notch *, .reveal, .tab-pill, .hold-fill)),
-    :where(*:not(.notch, .notch *, .reveal, .tab-pill, .hold-fill))::before,
-    :where(*:not(.notch, .notch *, .reveal, .tab-pill, .hold-fill))::after {
+    :where(*:not(.notch, .notch *, .reveal, .tab-clip, .hold-fill)),
+    :where(*:not(.notch, .notch *, .reveal, .tab-clip, .hold-fill))::before,
+    :where(*:not(.notch, .notch *, .reveal, .tab-clip, .hold-fill))::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }

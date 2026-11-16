@@ -57,6 +57,7 @@ export function overlayQuery(settings: Settings): string {
   const colors = [t.vrColor, t.gainColor, t.lossColor, t.rankColor].map(bare).join('-');
   if (colors !== '8effc6-5ef0a5-ff6d7e-ffe88f') params.set('colors', colors);
   if (player.tag && !hud) params.set('tag', player.tag);
+  // 5 s is the overlay page's own default, so only other values go in the link.
   if (!mmr && player.pollSeconds !== 5) params.set('poll', String(player.pollSeconds));
   if (Object.keys(patch).length) params.set('cfg', base64url(JSON.stringify(patch)));
   if (mmr) {

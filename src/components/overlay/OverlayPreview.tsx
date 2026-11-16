@@ -25,6 +25,8 @@ interface Props {
   playRef?: RefObject<((gain: number, ms: number) => void) | null>;
   /** What's behind the overlay in the preview. */
   backdrop?: Backdrop;
+  /** Enlarges the overlay in the preview (1 = fit). The overlay centres itself, so it grows from the middle. */
+  zoom?: number;
 }
 
 export type Backdrop = 'grid' | 'black' | 'white' | 'green';
@@ -36,7 +38,7 @@ export const BACKDROPS: readonly (readonly [Backdrop, string])[] = [
 ];
 
 /** The real overlay in a frame, as OBS will show it. */
-export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop = 'grid' }: Props) {
+export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop = 'grid', zoom = 1 }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [src, setSrc] = useState('about:blank');
@@ -61,14 +63,15 @@ export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop 
     if (!el || !iframe) return;
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      const scale = Math.min(1, width / FRAME);
+      // Zooming shrinks the overlay's own viewport and scales it back up, so its layout re-centres at the larger size.
+      const scale = Math.min(1, width / FRAME) * zoom;
       iframe.style.width = width / scale + 'px';
       iframe.style.height = height / scale + 'px';
       iframe.style.transform = `scale(${scale})`;
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [zoom]);
 
   useEffect(() => {
     if (!playRef) return;
@@ -105,11 +108,14 @@ export function OverlayPreview({ url, emptyMessage, playGain, playRef, backdrop 
         )}
       />
       {/* Stays mounted so it can fade out as the overlay fades in, rather than vanishing first. */}
-      <Skeleton
-        aria-label={waiting ? 'Loading the overlay' : undefined}
+      {/* The fade lives on a wrapper: Skeleton's pulse animates its own opacity and would override opacity-0, so it
+          kept pulsing over the overlay. The wrapper fades it out; the pulse itself only runs while waiting. */}
+      <div
         aria-hidden={!waiting}
-        className={cn('absolute inset-4 rounded-md transition-opacity duration-300 ease-(--ease-out)', !waiting && 'pointer-events-none opacity-0')}
-      />
+        className={cn('pointer-events-none absolute inset-4 transition-opacity duration-300 ease-(--ease-out)', !waiting && 'opacity-0')}
+      >
+        <Skeleton aria-label={waiting ? 'Loading the overlay' : undefined} className={cn('size-full rounded-md', !waiting && 'animate-none')} />
+      </div>
       {url || !emptyMessage ? null : (
         <p className="pointer-events-none absolute inset-0 grid place-items-center p-5 text-center text-sm text-zinc-400">{emptyMessage}</p>
       )}

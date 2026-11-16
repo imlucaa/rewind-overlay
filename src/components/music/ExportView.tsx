@@ -55,7 +55,7 @@ export function ExportView({ packName, target, onTarget, originalNames, onOrigin
   const working = status.kind === 'working';
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <Rows>
         <Row label="Pack name" hint="Name of the download">
           <TextField label="Pack name" placeholder="My music pack" value={packName} onChange={onRename} />
@@ -74,7 +74,7 @@ export function ExportView({ packName, target, onTarget, originalNames, onOrigin
         </Row>
         <Row label="In the pack" hint="Last lap files are added for you">
           <span className="text-muted-foreground text-sm tabular-nums">
-            {trackCount} track{trackCount === 1 ? '' : 's'} · {fileCount} file{fileCount === 1 ? '' : 's'} · {songCount} song{songCount === 1 ? '' : 's'} to convert
+            {trackCount} track{trackCount === 1 ? '' : 's'}, {fileCount} file{fileCount === 1 ? '' : 's'}, {songCount} song{songCount === 1 ? '' : 's'} to convert
           </span>
         </Row>
       </Rows>
@@ -101,10 +101,14 @@ export function ExportView({ packName, target, onTarget, originalNames, onOrigin
       ) : null}
 
       <div className="flex flex-col gap-3">
-        <Button size="lg" className="self-start" disabled={working || trackCount === blocking.length} onClick={onExport}>
-          {working ? <Spinner data-icon="inline-start" /> : null}
-          {working ? 'Making the pack' : 'Download pack (.zip)'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="lg" disabled={working || trackCount === blocking.length} onClick={onExport}>
+            {working ? <Spinner data-icon="inline-start" /> : null}
+            {working ? 'Making the pack' : 'Download pack (.zip)'}
+          </Button>
+          {/* A greyed-out button alone reads as broken; say what it's waiting for. */}
+          {!working && !trackCount ? <span className="text-muted-foreground text-sm">Give a track one of your songs first.</span> : null}
+        </div>
         <ExportProgress status={status} />
       </div>
 

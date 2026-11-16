@@ -129,9 +129,9 @@ export const PAGE_DEFAULTS: PageSettings = {
 export const PLUS_DEFAULTS: PlusSettings = {
   preview: { gain: 41 },
   font: { text: '', number: '', customText: '', customNumber: '' },
-  player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 5, loungeName: '', ladder: 'rr', mkwLadder: 'rt', flag: false },
+  player: { source: 'vr', friendCode: '', tag: '', pollSeconds: 3, loungeName: '', ladder: 'rr', mkwLadder: 'rt', flag: false },
   plus: {
-    rankBadge: false, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 2, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
+    rankBadge: true, rankOutline: false, rankOutlineColor: '#ffffff', rankOutlineWidth: 2, rankBadgeSize: 100, rankBadgeGap: 15, rankBadgeKind: '',
     card: true, hudDigits: false, look: 'card', divisionBacking: false, vrLabel: true, changeBox: true, keepChange: false, changeSize: 100,
     goal: '', nextRank: false, raceCount: false, winStreak: false,
   },

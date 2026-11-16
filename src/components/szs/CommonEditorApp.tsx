@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { FolderOpenIcon, RotateCcwIcon, SaveIcon } from 'lucide-react';
+import { FileUpIcon, FolderOpenIcon, RotateCcwIcon, SaveIcon, SearchIcon } from 'lucide-react';
 import { AppShell, Reveal, Split, Tab } from '@/components/layout/AppShell';
 import { download } from '@/hooks/useExport';
 import { isYaz0, yaz0Decode, yaz0Encode } from '@/lib/szs/yaz0';
@@ -14,13 +14,12 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { HoldButton } from '@/components/ui/hold-button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { TexturesView } from './TexturesView';
 
@@ -31,6 +30,8 @@ const STRIP = 8;
 
 interface Archive {
   name: string;
+  /** Bytes, for the header line. */
+  size: number;
   nodes: U8Node[];
   /** The race effects (Effect/RKRace.breff), or -1. */
   breff: number;
@@ -67,6 +68,7 @@ export function CommonEditorApp() {
   const [dirty, setDirty] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [section, setSection] = useState<Section>('all');
+  const [query, setQuery] = useState('');
   const [textureFile, setTextureFile] = useState<Breft | null>(null);
   const [textures, setTextures] = useState<Texture[]>([]);
   const browse = useRef<HTMLInputElement>(null);
@@ -107,7 +109,7 @@ export function CommonEditorApp() {
       const parsed = breft >= 0 ? readBreft(nodes[breft].data!) : null;
       setTextureFile(parsed);
       setTextures(parsed?.textures ?? []);
-      setArchive({ name: file.name, nodes, breff, breft });
+      setArchive({ name: file.name, size: file.size, nodes, breff, breft });
       setPicks({});
       setDirty(false);
       setError('');
@@ -125,6 +127,18 @@ export function CommonEditorApp() {
           ...change,
         };
       else delete next[id];
+      return next;
+    });
+    setDirty(true);
+  };
+
+  const setMany = (ids: string[], hex: string | null) => {
+    setPicks(current => {
+      const next = { ...current };
+      for (const id of ids) {
+        if (hex === null) delete next[id];
+        else next[id] = { ...(current[id] ?? { hex: '', keepWhite: false }), hex };
+      }
       return next;
     });
     setDirty(true);
@@ -160,7 +174,9 @@ export function CommonEditorApp() {
   const changed = Object.values(picks).filter(p => fromHex(p.hex)).length;
   const texturesChanged = textureFile ? textures.filter((t, i) => t !== textureFile.textures[i]).length : 0;
 
-  const card = (group: EffectGroup) => {
+  // One effect group per row: the swatch you click, what it is, the colors it uses now, then the exact hex, whether to
+  // keep its white parts, and a reset once it's changed. Rows scan top to bottom; the old card grid wrapped and clipped.
+  const row = (group: EffectGroup) => {
     const colors = shown.get(group.id);
     const count = byGroup.get(group.id)?.length ?? 0;
     const pick = picks[group.id];
@@ -169,85 +185,89 @@ export function CommonEditorApp() {
     const strip = (colors?.after ?? []).slice(0, STRIP);
     const id = `fx-${group.id}`;
     return (
-      <Card key={group.id} size="sm" className={cn('gap-3', valid && 'ring-foreground/40')}>
-        <CardHeader className="grid-cols-[auto_1fr_auto] items-start gap-x-3">
-          {/* The swatch is the game color itself, so it keeps its own color in either site theme. */}
-          <label className="border-input relative size-11 shrink-0 cursor-pointer overflow-hidden rounded-md border" title="Pick a color">
-            <input
-              type="color"
-              aria-label={`${group.label} color`}
-              disabled={!count}
-              value={valid ? toHex(valid) : main ? toHex(main) : '#000000'}
-              onChange={e => setPick(group.id, { hex: e.target.value })}
-              className="absolute -inset-2 size-[calc(100%+1rem)] cursor-pointer border-0 p-0"
+      <div
+        key={group.id}
+        className="hover:bg-muted/40 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 border-b px-4 py-3.5 transition-colors last:border-b-0 md:grid-cols-[auto_minmax(0,1fr)_auto]"
+      >
+        {/* The swatch is the game color itself, so it keeps its own color in either site theme. */}
+        <label
+          className={cn(
+            'border-input relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-xl border shadow-sm transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.97]',
+            valid && 'ring-foreground ring-offset-card ring-2 ring-offset-2',
+          )}
+          title="Pick a color"
+        >
+          <input
+            type="color"
+            aria-label={`${group.label} color`}
+            disabled={!count}
+            value={valid ? toHex(valid) : main ? toHex(main) : '#000000'}
+            onChange={e => setPick(group.id, { hex: e.target.value })}
+            className="absolute -inset-2 size-[calc(100%+1rem)] cursor-pointer border-0 p-0"
+          />
+          {/* Before and after: once a new color is picked, the left half keeps the file's own color. */}
+          {valid && main ? (
+            <i
+              className="border-card pointer-events-none absolute inset-y-0 left-0 w-1/2 border-r-2"
+              style={{ background: toHex(main) }}
+              title={`Was ${toHex(main)}`}
             />
-            {/* The file's own main color, in the corner, once a new one is picked. */}
-            {valid && main ? (
-              <i
-                className="ring-card pointer-events-none absolute right-0 bottom-0 size-3.5 rounded-tl ring-1"
-                style={{ background: toHex(main) }}
-                title={`Was ${toHex(main)}`}
-              />
-            ) : null}
-          </label>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <CardTitle className="truncate" title={`${count} effects in the game file`}>
-              {group.label}
-            </CardTitle>
-            <CardDescription className="line-clamp-2 text-xs" title={group.about}>
-              {group.about}
-            </CardDescription>
-          </div>
-          {pick ? (
-            <Button
-              variant="ghost"
-              size="xs"
-              aria-label={`Reset ${group.label}`}
-              title="Back to the file's colors"
-              onClick={() => setPick(group.id, null)}
-            >
-              Reset
-            </Button>
           ) : null}
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <Input
-              spellCheck={false}
-              aria-label={`${group.label} hex`}
-              aria-invalid={pick?.hex && !valid ? true : undefined}
-              placeholder={main ? toHex(main) : '#hex'}
-              disabled={!count}
-              value={pick?.hex ?? ''}
-              onChange={e => setPick(group.id, { hex: e.target.value })}
-              className="w-28 font-mono text-xs"
-            />
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id={`${id}-white`}
-                checked={pick?.keepWhite ?? false}
-                disabled={!count}
-                onCheckedChange={v => setPick(group.id, { keepWhite: v === true })}
-              />
-              <Label
-                htmlFor={`${id}-white`}
-                className="text-muted-foreground font-normal"
-                title="Leave near-white parts, like a spark's bright core, as they are"
-              >
-                Keep white parts
-              </Label>
-            </div>
+        </label>
+
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] font-medium" title={`${count} effects in the game file`}>
+              {group.label}
+            </span>
+            {valid ? <Badge variant="secondary">Changed</Badge> : null}
           </div>
+          <p className="text-muted-foreground text-[13px] leading-snug">{group.about}</p>
           <span
-            className="flex h-2 overflow-hidden rounded-full border"
+            className="mt-1 flex h-1.5 w-full max-w-60 overflow-hidden rounded-full"
             aria-label={`Colors in its ${count} effects: ${strip.map(toHex).join(', ')}`}
           >
             {strip.map((c, i) => (
               <i key={i} className="flex-1 transition-[background-color] duration-200 ease-(--ease-out)" style={{ background: toHex(c) }} title={toHex(c)} />
             ))}
           </span>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="col-span-2 flex items-center justify-end gap-4 md:col-span-1">
+          <Input
+            spellCheck={false}
+            aria-label={`${group.label} hex`}
+            aria-invalid={pick?.hex && !valid ? true : undefined}
+            placeholder={main ? toHex(main) : '#hex'}
+            disabled={!count}
+            value={pick?.hex ?? ''}
+            onChange={e => setPick(group.id, { hex: e.target.value })}
+            className="w-28 font-mono text-xs"
+          />
+          <div className="flex items-center gap-2" title="Leave near-white parts, like a spark's bright core, as they are">
+            <Switch
+              id={`${id}-white`}
+              checked={pick?.keepWhite ?? false}
+              disabled={!count}
+              onCheckedChange={v => setPick(group.id, { keepWhite: v })}
+            />
+            <Label htmlFor={`${id}-white`} className="text-muted-foreground font-normal whitespace-nowrap">
+              Keep white
+            </Label>
+          </div>
+          {/* Always takes its space, so the controls line up down the list whether a row is changed or not. */}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Reset ${group.label} to the file's colors`}
+            title="Back to the file's colors"
+            className={pick ? undefined : 'invisible'}
+            onClick={() => setPick(group.id, null)}
+          >
+            <RotateCcwIcon aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
     );
   };
 
@@ -272,8 +292,10 @@ export function CommonEditorApp() {
       status={
         archive ? (
           <span>
-            <b className="text-foreground font-medium">{archive.name}</b>
-            {dirty ? ', changes not saved' : ''}
+            <b className="text-foreground font-medium">{archive.name}</b>, {(archive.size / 1024 / 1024).toFixed(1)} MB
+            {changed + texturesChanged
+              ? `, ${changed + texturesChanged} change${changed + texturesChanged === 1 ? '' : 's'}${dirty ? ' not saved yet' : ' saved'}`
+              : ', nothing changed yet'}
           </span>
         ) : undefined
       }
@@ -293,14 +315,18 @@ export function CommonEditorApp() {
               Hold to reset all
             </HoldButton>
           ) : null}
-          <Button variant="outline" onClick={() => browse.current?.click()}>
-            <FolderOpenIcon data-icon="inline-start" aria-hidden="true" />
-            Open
-          </Button>
-          <Button disabled={!archive || saving} onClick={save}>
-            {saving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" aria-hidden="true" />}
-            {saving ? 'Saving' : 'Save common.szs'}
-          </Button>
+          {archive ? (
+            <>
+              <Button variant="outline" onClick={() => browse.current?.click()}>
+                <FolderOpenIcon data-icon="inline-start" aria-hidden="true" />
+                Open another
+              </Button>
+              <Button disabled={saving} onClick={save}>
+                {saving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" aria-hidden="true" />}
+                {saving ? 'Saving' : 'Save common.szs'}
+              </Button>
+            </>
+          ) : null}
         </>
       }
     >
@@ -324,7 +350,7 @@ export function CommonEditorApp() {
 
         {!archive ? (
           <Empty
-            className={cn('border border-dashed transition-colors', dragging && 'border-foreground bg-muted')}
+            className={cn('bg-card/60 min-h-[min(62vh,560px)] border border-dashed transition-colors', dragging && 'border-foreground bg-muted')}
             onDragOver={e => {
               e.preventDefault();
               setDragging(true);
@@ -337,13 +363,24 @@ export function CommonEditorApp() {
             }}
           >
             <EmptyHeader>
-              <EmptyTitle>Drop a common.szs here</EmptyTitle>
+              <EmptyMedia variant="icon">
+                <FileUpIcon aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle className="text-xl">Drop a common.szs here</EmptyTitle>
               <EmptyDescription>
                 Mario Kart Wii’s Race/Common.szs, or a mod’s copy of it. It stays on your computer: nothing is uploaded.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button onClick={() => browse.current?.click()}>Choose common.szs</Button>
+              <Button size="lg" onClick={() => browse.current?.click()}>
+                <FolderOpenIcon data-icon="inline-start" aria-hidden="true" />
+                Choose common.szs
+              </Button>
+              <ol className="text-muted-foreground mt-4 flex list-decimal flex-col gap-1.5 pl-5 text-left text-sm">
+                <li>Open the file and pick new colors for drifts, boosts, items and more.</li>
+                <li>Save it, then put it in your game or mod in place of the old one.</li>
+                <li>Keep the original somewhere safe in case you want it back.</li>
+              </ol>
             </EmptyContent>
           </Empty>
         ) : section === 'textures' && textureFile ? (
@@ -363,7 +400,7 @@ export function CommonEditorApp() {
           <Split
             sideLabel="Your file"
             side={
-              <div className="flex flex-col gap-4 rounded-lg border p-4">
+              <div className="bg-card flex flex-col gap-4 rounded-xl border p-5">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col">
                     <span className="text-2xl font-semibold tabular-nums">{changed}</span>
@@ -378,8 +415,8 @@ export function CommonEditorApp() {
                 <h2 className="text-sm font-medium">How to use it</h2>
                 <ol className="text-muted-foreground flex list-decimal flex-col gap-2 pl-5 text-sm">
                   <li>
-                    <b className="text-foreground font-medium">Click a color square</b> and pick a new color. The bar under each card shows the colors
-                    it uses now.
+                    <b className="text-foreground font-medium">Click a swatch</b> and pick a new color. The strip under each name shows the colors it
+                    uses now.
                   </li>
                   <li>
                     <b className="text-foreground font-medium">Save common.szs</b> (top right).
@@ -393,14 +430,65 @@ export function CommonEditorApp() {
             }
           >
             <Reveal id={section} className="flex flex-col gap-6">
-              {SECTIONS.filter(sec => section === 'all' || sec === section).map(sec => (
-                <section key={sec} className="flex flex-col gap-3">
-                  <h2 className="text-base font-semibold">{sec}</h2>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
-                    {EFFECT_GROUPS.filter(g => g.section === sec).map(card)}
-                  </div>
-                </section>
-              ))}
+              <div className="relative">
+                <SearchIcon aria-hidden="true" className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                <Input
+                  type="search"
+                  aria-label="Find an effect"
+                  placeholder="Find an effect, like spark or boost"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              {SECTIONS.filter(sec => section === 'all' || sec === section).map(sec => {
+                const q = query.trim().toLowerCase();
+                const all = EFFECT_GROUPS.filter(g => g.section === sec);
+                const groups = q ? all.filter(g => (g.label + ' ' + g.about).toLowerCase().includes(q)) : all;
+                if (!groups.length) return null;
+                const ids = groups.map(g => g.id);
+                return (
+                  <section key={sec} className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-baseline gap-3">
+                        <h2 className="text-lg font-semibold tracking-tight">{sec}</h2>
+                        <span className="text-muted-foreground text-sm tabular-nums">
+                          {groups.length} effect{groups.length === 1 ? '' : 's'}
+                          {changedIn(sec) ? `, ${changedIn(sec)} changed` : ''}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* One color for every effect listed in this section (after the search filter). */}
+                        <label className="hover:bg-muted relative flex h-8 cursor-pointer items-center gap-2 overflow-hidden rounded-lg px-2.5 text-sm font-medium transition-colors">
+                          <span aria-hidden="true" className="size-4 rounded-full border bg-[conic-gradient(red,yellow,lime,cyan,blue,magenta,red)]" />
+                          Color all
+                          <input
+                            type="color"
+                            aria-label={`One color for every effect in ${sec}`}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            onChange={e => setMany(ids, e.target.value)}
+                          />
+                        </label>
+                        {changedIn(sec) ? (
+                          <Button variant="ghost" size="sm" onClick={() => setMany(ids, null)}>
+                            <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
+                            Reset section
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="bg-card overflow-hidden rounded-xl border">{groups.map(row)}</div>
+                  </section>
+                );
+              })}
+              {query.trim() &&
+              !EFFECT_GROUPS.some(
+                g => (section === 'all' || g.section === section) && (g.label + ' ' + g.about).toLowerCase().includes(query.trim().toLowerCase()),
+              ) ? (
+                <p className="text-muted-foreground py-8 text-center text-sm">
+                  No effect matches “{query.trim()}”. Try a word like spark, smoke or boost.
+                </p>
+              ) : null}
             </Reveal>
           </Split>
         )}

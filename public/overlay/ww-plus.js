@@ -171,9 +171,10 @@
     return extras;
   }
 
-  // One read every 30 s; callers that come while it runs wait for the same read.
+  // One read every 15 s (MMR only changes after a mogi; faster adds load for nothing); callers that come while it
+  // runs wait for the same read.
   function loungePlayer() {
-    if (Date.now() - lounge.at >= 30000) {
+    if (Date.now() - lounge.at >= 15000) {
       lounge.at = Date.now();
       lounge.pending = readLounge();
     }
@@ -809,7 +810,7 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
-    if (mmr) setInterval(loungePlayer, 30000);
+    if (mmr) setInterval(loungePlayer, 15000);
   }
 
   if (document.body) start();

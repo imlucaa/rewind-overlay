@@ -28,9 +28,10 @@ interface AppShellProps {
 export function AppShell({ tabs, tabsLabel, status, actions, dock, children }: AppShellProps) {
   const tool = toolFor(usePathname());
   const nav = useRef<HTMLElement>(null);
-  const pill = useRef<HTMLSpanElement>(null);
+  const pill = useRef<HTMLDivElement>(null);
 
-  // Moves the pill to the open tab after every render (tabs change on click), and when the bar resizes.
+  // Clips the selected-style copy of the tabs to the open tab, after every render (tabs change on click) and when the
+  // bar resizes. Animating clip-path keeps the slide on the compositor, and the text turns white exactly under the pill.
   useLayoutEffect(() => {
     const bar = nav.current;
     const el = pill.current;
@@ -39,8 +40,8 @@ export function AppShell({ tabs, tabsLabel, status, actions, dock, children }: A
       const open = bar.querySelector<HTMLElement>('[aria-current]');
       el.style.opacity = open ? '1' : '0';
       if (!open) return;
-      el.style.translate = `${open.offsetLeft}px 0`;
-      el.style.width = `${open.offsetWidth}px`;
+      const right = el.offsetWidth - open.offsetLeft - open.offsetWidth;
+      el.style.clipPath = `inset(0 ${right}px 0 ${open.offsetLeft}px round 0.5rem)`;
     };
     place();
     // After the first placement, let it slide.
@@ -56,8 +57,8 @@ export function AppShell({ tabs, tabsLabel, status, actions, dock, children }: A
       <div className={cn(CONTAINER, 'flex flex-col gap-4 pt-6')}>
         <div className="reveal flex flex-wrap items-center justify-between gap-x-6 gap-y-3" style={{ '--delay': '0ms' } as CSSProperties}>
           <div className="flex min-w-0 flex-col">
-            <h1 className="text-xl font-semibold tracking-tight">{tool.label}</h1>
-            <div className="text-muted-foreground text-sm">{status ?? tool.about}</div>
+            <h1 className="text-3xl font-semibold tracking-[-0.02em]">{tool.label}</h1>
+            <div className="text-muted-foreground mt-1 text-[15px]">{status ?? tool.about}</div>
           </div>
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
@@ -68,8 +69,11 @@ export function AppShell({ tabs, tabsLabel, status, actions, dock, children }: A
           className="reveal bg-muted/60 w-fit max-w-full overflow-x-auto rounded-xl border p-1 [scrollbar-width:none]"
         >
           <div className="relative flex items-center gap-0.5">
-            <span ref={pill} aria-hidden="true" className="tab-pill" data-still="" />
             {tabs}
+            {/* The pill: the same tabs in their open style, clipped to the open one. Decorative, so hidden and inert. */}
+            <div ref={pill} aria-hidden="true" inert className="tab-clip" data-still="">
+              {tabs}
+            </div>
           </div>
         </nav>
       </div>
@@ -90,7 +94,7 @@ interface TabProps {
   children: ReactNode;
 }
 
-/** One of the page's views, a segment of the bar under the title. The pill behind the open one slides to it. */
+/** One of the page's views, a segment of the bar under the title. The pill (a clipped copy of the bar) slides to it. */
 export function Tab({ current, onSelect, children }: TabProps) {
   return (
     <button
@@ -98,7 +102,7 @@ export function Tab({ current, onSelect, children }: TabProps) {
       aria-current={current || undefined}
       onClick={onSelect}
       className={cn(
-        'text-muted-foreground hover:text-foreground relative flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap outline-none transition-colors duration-[280ms] ease-(--ease-drawer) focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:h-10',
+        'text-muted-foreground hover:text-foreground relative flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3.5 text-[15px] font-medium whitespace-nowrap outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:h-10',
         current && 'text-foreground',
       )}
     >
