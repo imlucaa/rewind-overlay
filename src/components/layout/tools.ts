@@ -1,11 +1,12 @@
-import { AudioLinesIcon, MonitorPlayIcon, MusicIcon, PaletteIcon } from 'lucide-react';
+import { AudioLinesIcon, GlobeIcon, MonitorPlayIcon, MusicIcon, PaletteIcon } from 'lucide-react';
 
-// The tools. Icons say what each one makes: a stream overlay, music, colors, sound effects.
+// The tools. Icons say what each one makes: a stream overlay, music, colors, sound effects; then the rooms and rankings.
 export const TOOLS = [
   { href: '/', label: 'Overlay', icon: MonitorPlayIcon, about: 'VR and MMR overlay for OBS' },
   { href: '/music-pack/', label: 'Music Pack', icon: MusicIcon, about: 'Swap the race music for your own songs' },
   { href: '/common-szs/', label: 'common.szs', icon: PaletteIcon, about: 'Recolor drifts, boosts and other effects' },
-  { href: '/sounds/', label: 'Sounds', icon: AudioLinesIcon, about: 'Replace sound effects with your own audio' },
+  { href: '/sounds/', label: 'Sounds', icon: AudioLinesIcon, about: 'Swap the trick, boost and other sounds' },
+  { href: '/rooms/', label: 'Rooms', icon: GlobeIcon, about: 'Live rooms, the leaderboard and player profiles' },
 ] as const;
 
 /** The tool a path belongs to (the overlay for anything else). */

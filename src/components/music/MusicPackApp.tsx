@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DownloadIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
+import { DownloadIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStoredState } from '@/hooks/useStoredState';
 import { AppShell, Reveal, Split, Tab } from '@/components/layout/AppShell';
@@ -65,7 +65,7 @@ interface Props {
 /** The music pack maker: import songs, give them tracks, set speed and volume, download a Retro Rewind pack. */
 export function MusicPackApp({ tracks }: Props) {
   const library = useLibrary();
-  const { pack, update, undo, redo, canUndo, canRedo } = usePack();
+  const { pack, update, undo } = usePack();
   const preview = usePreview();
   const exporter = useExport();
   const packImport = usePackImport(tracks, library.addSong);
@@ -163,7 +163,7 @@ export function MusicPackApp({ tracks }: Props) {
       void readShareLink(hash)
         .then(text => {
           if (!text) return;
-          if (!window.confirm('Open the shared music pack? It replaces the songs on your tracks (Undo brings them back).')) return;
+          if (!window.confirm('Open the shared music pack? It replaces the songs on your tracks.')) return;
           window.alert(loadLatest.current(text) + ' Songs are matched by file name and size, so you need the same song files.');
         })
         .catch(err => window.alert(err instanceof Error ? err.message : String(err)));
@@ -189,7 +189,7 @@ export function MusicPackApp({ tracks }: Props) {
         Object.entries(p.assignments).map(([file, a]) => [file, volumes.has(a.songId) ? { ...a, volumeDb: volumes.get(a.songId)! } : a]),
       ),
     }));
-    return `Done: ${volumes.size} song${volumes.size === 1 ? '' : 's'} now play at about the same loudness. Undo puts the old volumes back.`;
+    return `Done: ${volumes.size} song${volumes.size === 1 ? '' : 's'} now play at about the same loudness.`;
   };
 
   const exportAll = () => void exporter.run(plan.jobs, `${safeFileName(pack.packName)}.zip`, true, pack.target, pack.originalNames);
@@ -239,12 +239,6 @@ export function MusicPackApp({ tracks }: Props) {
       }
       actions={
         <>
-          <Button variant="ghost" size="icon" aria-label="Undo" onClick={undo} disabled={!canUndo}>
-            <Undo2Icon aria-hidden="true" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Redo" onClick={redo} disabled={!canRedo}>
-            <Redo2Icon aria-hidden="true" />
-          </Button>
           {songsToEncode || exporter.busy ? (
             <Button disabled={exporter.busy} onClick={exportAll}>
               {exporter.busy ? <Spinner data-icon="inline-start" /> : <DownloadIcon data-icon="inline-start" aria-hidden="true" />}

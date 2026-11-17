@@ -10,22 +10,29 @@ import { SwapIcon } from '@/components/ui/swap-icon';
 const noSubscribe = () => () => {};
 
 /**
- * Swaps the theme inside a view transition, so the page crossfades (250ms, styles/motion.css) instead of the whole
- * screen jumping from black to white in one frame. The class goes on <html> by hand first so the browser's "after"
- * snapshot already has the new theme; next-themes then catches up and saves the choice. Browsers without view
- * transitions just switch.
+ * Swaps the theme inside a view transition, so the page crossfades (styles/motion.css) instead of the whole screen
+ * jumping from black to white in one frame. The class goes on <html> by hand so the browser's "after" snapshot already
+ * has the new theme; next-themes then saves the choice. While it swaps, every CSS transition is switched off: otherwise
+ * each button and card would also tween its own colors under the crossfade, which is what made switching feel heavy.
+ * Browsers without view transitions just switch.
  */
 function switchTheme(next: 'light' | 'dark', setTheme: (theme: string) => void) {
-  if (!document.startViewTransition) return setTheme(next);
-  document.startViewTransition(async () => {
-    const root = document.documentElement;
+  const root = document.documentElement;
+  const apply = () => {
     root.classList.remove('light', 'dark');
     root.classList.add(next);
     root.style.colorScheme = next;
-    flushSync(() => setTheme(next));
-    // One frame for things drawn after render (the halftone canvas) to repaint before the snapshot.
-    await new Promise(done => requestAnimationFrame(() => done(null)));
-  });
+    setTheme(next);
+  };
+  const still = document.createElement('style');
+  still.textContent = '*,*::before,*::after{transition:none!important}';
+  document.head.appendChild(still);
+  const done = () => requestAnimationFrame(() => still.remove());
+  if (!document.startViewTransition) {
+    apply();
+    return done();
+  }
+  document.startViewTransition(() => flushSync(apply)).finished.finally(done);
 }
 
 /** Switches between light and dark. Sun and moon: the glyphs people already read as "theme". */

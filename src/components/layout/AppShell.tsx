@@ -9,9 +9,9 @@ import { toolFor } from './tools';
 export const CONTAINER = 'mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8';
 
 interface AppShellProps {
-  /** The page's own views (Tab elements), as a segmented bar under the title. */
-  tabs: ReactNode;
-  tabsLabel: string;
+  /** The page's own views (Tab elements), as a segmented bar under the title. None for a one-view page. */
+  tabs?: ReactNode;
+  tabsLabel?: string;
   /** Under the page title: what's open, counts. Defaults to what the tool does. */
   status?: ReactNode;
   /** Right side of the page header. */
@@ -62,20 +62,22 @@ export function AppShell({ tabs, tabsLabel, status, actions, dock, children }: A
           </div>
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
-        <nav
-          ref={nav}
-          aria-label={tabsLabel}
-          style={{ '--delay': '60ms' } as CSSProperties}
-          className="reveal bg-muted/60 w-fit max-w-full overflow-x-auto rounded-xl border p-1 [scrollbar-width:none]"
-        >
-          <div className="relative flex items-center gap-0.5">
-            {tabs}
-            {/* The pill: the same tabs in their open style, clipped to the open one. Decorative, so hidden and inert. */}
-            <div ref={pill} aria-hidden="true" inert className="tab-clip" data-still="">
+        {tabs ? (
+          <nav
+            ref={nav}
+            aria-label={tabsLabel}
+            style={{ '--delay': '60ms' } as CSSProperties}
+            className="reveal bg-muted/60 w-fit max-w-full overflow-x-auto rounded-xl border p-1 [scrollbar-width:none]"
+          >
+            <div className="relative flex items-center gap-0.5">
               {tabs}
+              {/* The pill: the same tabs in their open style, clipped to the open one. Decorative, so hidden and inert. */}
+              <div ref={pill} aria-hidden="true" inert className="tab-clip" data-still="">
+                {tabs}
+              </div>
             </div>
-          </div>
-        </nav>
+          </nav>
+        ) : null}
       </div>
 
       {/* Not keyed by the open view: remounting would reload the overlay preview on every tab switch. */}
