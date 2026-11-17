@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { Backdrop } from '@/components/layout/Backdrop';
 import { ToolIsland } from '@/components/layout/ToolIsland';
 import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
   title: { default: 'Overlay', template: '%s · Overlay' },
@@ -28,11 +29,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Backdrop />
-          <ToolIsland />
-          {children}
-          {/* On phones toasts span the bottom; lift them over the music player bar. */}
-          <Toaster position="bottom-right" mobileOffset={{ bottom: 84 }} />
+          <TooltipProvider delayDuration={300}>
+            <Backdrop />
+            <ToolIsland />
+            {children}
+            {/* On phones toasts span the bottom; lift them over the music player bar. */}
+            <Toaster position="bottom-right" mobileOffset={{ bottom: 84 }} />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

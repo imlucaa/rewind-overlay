@@ -9,7 +9,10 @@ export const FORMATS: Record<number, { name: string; blockW: number; blockH: num
   4: { name: 'RGB565', blockW: 4, blockH: 4, bits: 16 },
   5: { name: 'RGB5A3', blockW: 4, blockH: 4, bits: 16 },
   6: { name: 'RGBA8', blockW: 4, blockH: 4, bits: 32 },
+  14: { name: 'CMPR', blockW: 8, blockH: 8, bits: 4 },
 };
+
+export const CMPR = 14;
 
 export const RGB5A3 = 5;
 
@@ -48,6 +51,34 @@ export function decodeTexture(format: number, width: number, height: number, dat
     out[o + 2] = b;
     out[o + 3] = a;
   };
+  if (format === CMPR) {
+    // CMPR: 8×8 tiles of four 4×4 sub-blocks (left to right, top to bottom), each two RGB565 colors and 2-bit indices,
+    // like DXT1. When the first color isn't larger, the fourth index is see-through.
+    let at = 0;
+    for (let by = 0; by < height; by += 8)
+      for (let bx = 0; bx < width; bx += 8)
+        for (let sub = 0; sub < 4; sub++, at += 8) {
+          const c0 = view.getUint16(at);
+          const c1 = view.getUint16(at + 2);
+          const rgb = (c: number) => [expand5(c >> 11), expand6((c >> 5) & 0x3f), expand5(c & 0x1f)];
+          const a = rgb(c0);
+          const b = rgb(c1);
+          const palette =
+            c0 > c1
+              ? [[...a, 255], [...b, 255], [...a.map((v, k) => Math.round((2 * v + b[k]) / 3)), 255], [...a.map((v, k) => Math.round((v + 2 * b[k]) / 3)), 255]]
+              : [[...a, 255], [...b, 255], [...a.map((v, k) => (v + b[k]) >> 1), 255], [0, 0, 0, 0]];
+          const sx = bx + (sub & 1) * 4;
+          const sy = by + (sub >> 1) * 4;
+          for (let row = 0; row < 4; row++) {
+            const bits = data[at + 4 + row];
+            for (let col = 0; col < 4; col++) {
+              const [r, g, bl, al] = palette[(bits >> (6 - col * 2)) & 3];
+              put(sx + col, sy + row, r, g, bl, al);
+            }
+          }
+        }
+    return out;
+  }
   if (format === 6) {
     // RGBA8: each 4×4 tile is 32 bytes of AR pairs, then 32 bytes of GB pairs.
     let tile = 0;

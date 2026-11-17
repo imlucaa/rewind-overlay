@@ -26,6 +26,8 @@ interface WaveCopy {
 export interface Wave {
   /** Identifies the wave across sounds (sounds sharing one wave share its audio). */
   key: string;
+  /** The archive file (RWSD sound file or RBNK bank) that holds it: its ID, as Retro Rewind's Patches name it. */
+  file: number;
   format: WaveFormat;
   copies: WaveCopy[];
 }
@@ -37,8 +39,17 @@ export interface SoundEntry {
   waves: Wave[];
 }
 
+/** Where an archive file's first copy sits: its header (RWSD, RBNK...) and its audio (an RWAR, when it has one). */
+export interface ArchiveFile {
+  header: number;
+  headerSize: number;
+  audio: number;
+  audioSize: number;
+}
+
 export interface Brsar {
   sounds: SoundEntry[];
+  files: Map<number, ArchiveFile>;
 }
 
 class Reader {
@@ -127,6 +138,7 @@ export function readBrsar(bytes: Uint8Array): Brsar {
   const base = info + 8;
   const table = (k: number) => base + r.u32(base + k * 8 + 4);
   const soundEntries = r.refList(table(0), base);
+  const bankEntries = r.refList(table(1), base);
   const fileEntries = r.refList(table(3), base);
   const groupEntries = r.refList(table(4), base);
 
@@ -135,7 +147,9 @@ export function readBrsar(bytes: Uint8Array): Brsar {
     waveDataOffset: r.u32(g + 0x18),
     items: r.refList(base + r.u32(g + 0x24), base).map(it => ({
       headerOffset: r.u32(it + 4),
+      headerSize: r.u32(it + 8),
       dataOffset: r.u32(it + 0x0c),
+      dataSize: r.u32(it + 0x10),
     })),
   }));
 
@@ -146,7 +160,16 @@ export function readBrsar(bytes: Uint8Array): Brsar {
     return r.refList(base + r.u32(f + 0x18), base).flatMap(pos => {
       const group = groups[r.i32(pos)];
       const item = group?.items[r.i32(pos + 4)];
-      return group && item ? [{ header: group.headerOffset + item.headerOffset, audio: group.waveDataOffset + item.dataOffset }] : [];
+      return group && item
+        ? [
+            {
+              header: group.headerOffset + item.headerOffset,
+              headerSize: item.headerSize,
+              audio: group.waveDataOffset + item.dataOffset,
+              audioSize: item.dataSize,
+            },
+          ]
+        : [];
     });
   };
 
@@ -166,6 +189,11 @@ export function readBrsar(bytes: Uint8Array): Brsar {
       });
     }
     // Newer files keep each wave as an RWAV inside an RWAR at the start of the file's audio.
+    return rwarWaves(audio);
+  };
+
+  // An RWAR wave archive: a table of RWAV files, each an info block and its audio.
+  function rwarWaves(audio: number): WaveCopy[] {
     r.expect(audio, 'RWAR', 'wave archive');
     const tabl = audio + r.u32(audio + 0x10);
     const data = audio + r.u32(audio + 0x18);
@@ -174,9 +202,12 @@ export function readBrsar(bytes: Uint8Array): Brsar {
     return Array.from({ length: n }, (_, i) => {
       const rwav = data + r.u32(tabl + 12 + i * 12 + 4);
       r.expect(rwav, 'RWAV', 'wave');
-      return { info: rwav + r.u32(rwav + 0x10) + 8, dataBase: rwav + r.u32(rwav + 0x18) + 8 };
+      return {
+        info: rwav + r.u32(rwav + 0x10) + 8,
+        dataBase: rwav + r.u32(rwav + 0x18) + 8,
+      };
     });
-  };
+  }
 
   // Which wave indices a sound in an RWSD plays: DATA list -> sound -> note table -> each note's wave index.
   const notesOf = (rwsd: number, soundIndex: number): number[] => {
@@ -190,10 +221,64 @@ export function readBrsar(bytes: Uint8Array): Brsar {
     return notes.map(n => r.i32(n));
   };
 
+  // The waves of every copy of a bank (RBNK + its RWAR), by wave index.
+  const bankWaves = (fileId: number) =>
+    fileCopies(fileId).map(copy => {
+      r.expect(copy.header, 'RBNK', 'instrument bank');
+      return rwarWaves(copy.audio);
+    });
+
+  // Which wave each instrument (program) of a bank plays, for simple one-wave instruments.
+  // shortcut: key-split and velocity-split instruments (data types 2 and 3) are skipped; add them if a sound needs one.
+  const instrumentWave = (bankHeader: number, program: number): number | null => {
+    const data = bankHeader + r.u32(bankHeader + 0x10);
+    r.expect(data, 'DATA', 'bank data');
+    const n = r.u32(data + 8);
+    if (program < 0 || program >= n) return null;
+    const ref = data + 12 + program * 8;
+    if (r.u8(ref) !== 1 || r.u8(ref + 1) !== 1) return null;
+    return r.i32(data + 8 + r.u32(ref + 4));
+  };
+
   const waves = new Map<string, Wave>();
   const result: SoundEntry[] = [];
+  const files = new Map<number, ArchiveFile>();
+  const addWave = (key: string, file: number, found: WaveCopy[], list: Wave[]) => {
+    if (!files.has(file)) files.set(file, fileCopies(file)[0]);
+    let wave = waves.get(key);
+    if (!wave) {
+      wave = { key, file, format: readFormat(r, found[0].info), copies: found };
+      waves.set(key, wave);
+    }
+    list.push(wave);
+  };
+
   soundEntries.forEach((s, index) => {
-    if (r.u8(s + 0x16) !== 3) return; // only wave sounds (not sequences or streams)
+    const type = r.u8(s + 0x16);
+    if (type === 1) {
+      // A sequence: a short script that picks instruments from a bank and plays notes. Sound effects like the trick
+      // are one program change and one note; follow those to the bank's waves.
+      const seqInfo = base + r.u32(s + 0x1c);
+      const bank = bankEntries[r.i32(seqInfo + 4)];
+      const seq = fileCopies(r.i32(s + 4))[0];
+      if (bank === undefined || !seq || r.tag(seq.header) !== 'RSEQ') return;
+      const bankFile = r.i32(bank + 4);
+      const bankCopy = fileCopies(bankFile)[0];
+      if (!bankCopy) return;
+      const data = seq.header + r.u32(seq.header + 0x10);
+      const programs = sequencePrograms(r, data + r.u32(data + 8) + r.u32(seqInfo));
+      const tables = bankWaves(bankFile);
+      const list: Wave[] = [];
+      for (const program of programs) {
+        const w = instrumentWave(bankCopy.header, program);
+        if (w === null) continue;
+        const found = tables.flatMap(t => (t[w] ? [t[w]] : []));
+        if (found.length) addWave(`bank${bankFile}:${w}`, bankFile, found, list);
+      }
+      if (list.length) result.push({ index, name: name(r.i32(s)), waves: list });
+      return;
+    }
+    if (type !== 3) return; // streams are music, handled elsewhere
     const fileId = r.i32(s + 4);
     const soundIndex = r.i32(base + r.u32(s + 0x1c));
     const copies = fileCopies(fileId);
@@ -207,18 +292,67 @@ export function readBrsar(bytes: Uint8Array): Brsar {
       }
     }
     const list: Wave[] = [];
-    for (const [slot, found] of wavesBySlot) {
-      const key = `${fileId}:${slot}`;
-      let wave = waves.get(key);
-      if (!wave) {
-        wave = { key, format: readFormat(r, found[0].info), copies: found };
-        waves.set(key, wave);
-      }
-      list.push(wave);
-    }
+    for (const [slot, found] of wavesBySlot) addWave(`${fileId}:${slot}`, fileId, found, list);
     if (list.length) result.push({ index, name: name(r.i32(s)), waves: list });
   });
-  return { sounds: result };
+  return { sounds: result, files };
+}
+
+/**
+ * One archive file on its own, the way Retro Rewind's Patches load it in place of that file of revo_kart.brsar (see
+ * rr-pulsar, Sound/BRSARPatches.cpp): the RWSD or RBNK, padded to 32 bytes, then its RWAR wave archive. Named
+ * `<file ID>.<label>.brwsd` or `.brbnk`. Null for files whose audio isn't an RWAR (older sound files), which
+ * Patches can't swap the audio of.
+ */
+export function looseFile(bytes: Uint8Array, archive: Brsar, id: number, label: string): { name: string; data: Uint8Array } | null {
+  const file = archive.files.get(id);
+  if (!file) return null;
+  const r = new Reader(bytes);
+  const kind = r.tag(file.header);
+  if ((kind !== 'RWSD' && kind !== 'RBNK') || !file.audioSize || r.tag(file.audio) !== 'RWAR') return null;
+  const size = r.u32(file.header + 8);
+  const padded = Math.ceil(size / 32) * 32;
+  const data = new Uint8Array(padded + file.audioSize);
+  data.set(bytes.subarray(file.header, file.header + size));
+  data.set(bytes.subarray(file.audio, file.audio + file.audioSize), padded);
+  // Patches reject dashes and leading digits in the label part of the name.
+  const safe = label.replace(/[^a-z0-9_]+/gi, '_').replace(/^[0-9_]+/, '') || 'sound';
+  return { name: `${id}.${safe}.${kind === 'RBNK' ? 'brbnk' : 'brwsd'}`, data };
+}
+
+/**
+ * The programs (instruments) a sequence plays notes with, following it from `at` until it ends. Only straight-line
+ * scripts are followed: anything that branches or opens other tracks stops the walk, which is fine for sound effects.
+ */
+function sequencePrograms(r: Reader, at: number): number[] {
+  const varlen = () => {
+    let value = 0;
+    for (let k = 0; k < 4; k++) {
+      const byte = r.u8(at++);
+      value = (value << 7) | (byte & 0x7f);
+      if (!(byte & 0x80)) break;
+    }
+    return value;
+  };
+  const programs = new Set<number>();
+  let program = 0;
+  for (let steps = 0; steps < 256; steps++) {
+    const cmd = r.u8(at++);
+    if (cmd < 0x80) {
+      at++; // velocity
+      varlen(); // length
+      programs.add(program);
+    } else if (cmd === 0x80)
+      varlen(); // wait
+    else if (cmd === 0x81) program = varlen();
+    else if (cmd >= 0xb0 && cmd <= 0xdf)
+      at += 1; // one-byte settings (volume, pan, pitch...)
+    else if (cmd >= 0xe0 && cmd <= 0xe3) at += 2;
+    else if (cmd === 0xfe)
+      at += 2; // track allocation
+    else break; // end, or a branch
+  }
+  return [...programs];
 }
 
 // ---------- audio ----------
@@ -323,7 +457,7 @@ export function patchWave(bytes: Uint8Array, wave: Wave, pcm: Int16Array): Uint8
         // Loop context: the frame header at the loop start and the two samples before it, from our own encode.
         const ls = f.looped ? f.loopStart : 0;
         const decoded = ls ? decodeWave(bytes, { ...wave, copies: [copy] }) : null;
-        r.v.setUint16(adpcm + 0x28, f.looped ? encoded[Math.floor(ls / 14) * 8] ?? 0 : 0);
+        r.v.setUint16(adpcm + 0x28, f.looped ? (encoded[Math.floor(ls / 14) * 8] ?? 0) : 0);
         r.v.setInt16(adpcm + 0x2a, decoded && ls > 0 ? decoded[ls - 1] : 0);
         r.v.setInt16(adpcm + 0x2c, decoded && ls > 1 ? decoded[ls - 2] : 0);
       }
@@ -331,4 +465,3 @@ export function patchWave(bytes: Uint8Array, wave: Wave, pcm: Int16Array): Uint8
   }
   return bytes;
 }
-
