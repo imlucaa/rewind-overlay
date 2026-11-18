@@ -1,18 +1,20 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
-import { FileUpIcon, FolderOpenIcon, RotateCcwIcon, SaveIcon, SearchIcon } from 'lucide-react';
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { FileUpIcon, FolderOpenIcon, LinkIcon, RotateCcwIcon, SaveIcon, SearchIcon } from 'lucide-react';
 import { AppShell, Reveal, Split, Tab } from '@/components/layout/AppShell';
 import { download } from '@/hooks/useExport';
 import { isYaz0, yaz0Decode, yaz0Encode } from '@/lib/szs/yaz0';
 import { readU8, writeU8, type U8Node } from '@/lib/szs/u8';
 import { fromHex, groupColors, readBreff, recolorGroup, toHex, type Effect, type Rgb } from '@/lib/szs/breff';
 import { EFFECT_GROUPS, groupOf, type EffectGroup } from '@/lib/szs/effectGroups';
+import { decodeColors, encodeColors, PRESETS, type Preset } from '@/lib/szs/presets';
 import { readBreft, writeBreft, type Breft, type Texture } from '@/lib/szs/breft';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { HexColorPopover } from '@/components/ui/hex-color-picker';
 import { HoldButton } from '@/components/ui/hold-button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
@@ -69,11 +71,22 @@ export function CommonEditorApp() {
   const [dragging, setDragging] = useState(false);
   const [section, setSection] = useState<Section>('all');
   const [query, setQuery] = useState('');
+  // The last color picked with each section's Color all, so its picker reopens on it.
+  const [allColor, setAllColor] = useState<Record<string, string>>({});
   const [textureFile, setTextureFile] = useState<Breft | null>(null);
   const [textures, setTextures] = useState<Texture[]>([]);
   const browse = useRef<HTMLInputElement>(null);
 
   const original = archive && archive.breff >= 0 ? archive.nodes[archive.breff].data! : null;
+  // Colors someone shared in a link (?colors=...), applied when you open your file.
+  const sharedText = useSyncExternalStore(
+    useCallback(() => () => {}, []),
+    () => new URLSearchParams(window.location.search).get('colors') ?? '',
+    () => '',
+  );
+  const shared = useMemo(() => decodeColors(sharedText), [sharedText]);
+  const sharedCount = Object.keys(shared).length;
+
   const byGroup = useMemo(() => {
     const map = new Map<string, Effect[]>();
     for (const effect of effects) {
@@ -110,8 +123,12 @@ export function CommonEditorApp() {
       setTextureFile(parsed);
       setTextures(parsed?.textures ?? []);
       setArchive({ name: file.name, size: file.size, nodes, breff, breft });
-      setPicks({});
-      setDirty(false);
+      setPicks(Object.fromEntries(Object.entries(shared).map(([id, hex]) => [id, { hex, keepWhite: false }])));
+      setDirty(sharedCount > 0);
+      if (sharedCount)
+        toast.success(`Applied the shared colors to ${sharedCount} effect${sharedCount === 1 ? '' : 's'}`, {
+          description: 'Save common.szs to keep them.',
+        });
       setError('');
     } catch (err) {
       setError(`${file.name}: ${err instanceof Error ? err.message : String(err)}`);
@@ -144,6 +161,43 @@ export function CommonEditorApp() {
     setDirty(true);
   };
 
+  // A theme sets its groups' colors and leaves your other picks (and each group's keep-white choice) alone.
+  const applyPreset = (preset: Preset) => {
+    setPicks(current => {
+      const next = { ...current };
+      for (const [id, hex] of Object.entries(preset.colors)) next[id] = { keepWhite: current[id]?.keepWhite ?? false, hex };
+      return next;
+    });
+    setDirty(true);
+    toast(`${preset.name} colors applied`, {
+      description: 'Change any effect below, or save common.szs.',
+    });
+  };
+
+  const copyShareLink = async () => {
+    const colors = Object.fromEntries(
+      Object.entries(picks)
+        .filter(([, p]) => fromHex(p.hex))
+        .map(([id, p]) => [id, p.hex]),
+    );
+    const text = encodeColors(colors);
+    if (!text) {
+      toast.error('No colors to share yet', {
+        description: 'Pick a theme or recolor an effect first.',
+      });
+      return;
+    }
+    const url = `${window.location.origin}${window.location.pathname}?colors=${text}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Share link copied', {
+        description: 'Anyone who opens it gets your colors when they open their common.szs.',
+      });
+    } catch {
+      toast.error('Couldn’t copy', { description: url });
+    }
+  };
+
   const save = () => {
     if (!archive || !original) return;
     setSaving(true);
@@ -162,7 +216,9 @@ export function CommonEditorApp() {
           };
         download(new Blob([yaz0Encode(writeU8(nodes))]), archive.name);
         setDirty(false);
-        toast.success(`Saved ${archive.name}`, { description: 'Put it in your game or mod in place of the old one.' });
+        toast.success(`Saved ${archive.name}`, {
+          description: 'Put it in your game or mod in place of the old one.',
+        });
       } catch (err) {
         setError(`Couldn’t save: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
@@ -190,30 +246,29 @@ export function CommonEditorApp() {
         className="hover:bg-muted/40 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 border-b px-4 py-3.5 transition-colors last:border-b-0 md:grid-cols-[auto_minmax(0,1fr)_auto]"
       >
         {/* The swatch is the game color itself, so it keeps its own color in either site theme. */}
-        <label
-          className={cn(
-            'border-input relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-xl border shadow-sm transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.97]',
-            valid && 'ring-foreground ring-offset-card ring-2 ring-offset-2',
-          )}
-          title="Pick a color"
-        >
-          <input
-            type="color"
+        <HexColorPopover value={valid ? toHex(valid) : main ? toHex(main) : '#000000'} onChange={hex => setPick(group.id, { hex })} disabled={!count}>
+          <button
+            type="button"
             aria-label={`${group.label} color`}
-            disabled={!count}
-            value={valid ? toHex(valid) : main ? toHex(main) : '#000000'}
-            onChange={e => setPick(group.id, { hex: e.target.value })}
-            className="absolute -inset-2 size-[calc(100%+1rem)] cursor-pointer border-0 p-0"
-          />
-          {/* Before and after: once a new color is picked, the left half keeps the file's own color. */}
-          {valid && main ? (
-            <i
-              className="border-card pointer-events-none absolute inset-y-0 left-0 w-1/2 border-r-2"
-              style={{ background: toHex(main) }}
-              title={`Was ${toHex(main)}`}
-            />
-          ) : null}
-        </label>
+            className={cn(
+              'border-input relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-xl border shadow-sm transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.97]',
+              valid && 'ring-foreground ring-offset-card ring-2 ring-offset-2',
+            )}
+            title="Pick a color"
+            style={{
+              background: valid ? toHex(valid) : main ? toHex(main) : '#000000',
+            }}
+          >
+            {/* Before and after: once a new color is picked, the left half keeps the file's own color. */}
+            {valid && main ? (
+              <i
+                className="border-card pointer-events-none absolute inset-y-0 left-0 w-1/2 border-r-2"
+                style={{ background: toHex(main) }}
+                title={`Was ${toHex(main)}`}
+              />
+            ) : null}
+          </button>
+        </HexColorPopover>
 
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -245,12 +300,7 @@ export function CommonEditorApp() {
             className="w-28 font-mono text-xs"
           />
           <div className="flex items-center gap-2" title="Leave near-white parts, like a spark's bright core, as they are">
-            <Switch
-              id={`${id}-white`}
-              checked={pick?.keepWhite ?? false}
-              disabled={!count}
-              onCheckedChange={v => setPick(group.id, { keepWhite: v })}
-            />
+            <Switch id={`${id}-white`} checked={pick?.keepWhite ?? false} disabled={!count} onCheckedChange={v => setPick(group.id, { keepWhite: v })} />
             <Label htmlFor={`${id}-white`} className="text-muted-foreground font-normal whitespace-nowrap">
               Keep white
             </Label>
@@ -272,9 +322,7 @@ export function CommonEditorApp() {
   };
 
   const changedIn = (sec: Section) =>
-    sec === 'textures'
-      ? texturesChanged
-      : EFFECT_GROUPS.filter(g => (sec === 'all' || g.section === sec) && picks[g.id] && fromHex(picks[g.id].hex)).length;
+    sec === 'textures' ? texturesChanged : EFFECT_GROUPS.filter(g => (sec === 'all' || g.section === sec) && picks[g.id] && fromHex(picks[g.id].hex)).length;
 
   return (
     <AppShell
@@ -308,7 +356,9 @@ export function CommonEditorApp() {
               onConfirm={() => {
                 setPicks({});
                 setTextures(textureFile?.textures ?? []);
-                toast('Colors and textures reset', { description: 'Back to the file’s own.' });
+                toast('Colors and textures reset', {
+                  description: 'Back to the file’s own.',
+                });
               }}
             >
               <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
@@ -347,6 +397,15 @@ export function CommonEditorApp() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
+        {!archive && sharedCount ? (
+          <Alert>
+            <LinkIcon aria-hidden="true" />
+            <AlertTitle>Someone shared their colors with you</AlertTitle>
+            <AlertDescription>
+              {sharedCount} effect{sharedCount === 1 ? '' : 's'}. Open your common.szs and they’re applied straight away.
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         {!archive ? (
           <Empty
@@ -367,9 +426,7 @@ export function CommonEditorApp() {
                 <FileUpIcon aria-hidden="true" />
               </EmptyMedia>
               <EmptyTitle className="text-xl">Drop a common.szs here</EmptyTitle>
-              <EmptyDescription>
-                Mario Kart Wii’s Race/Common.szs, or a mod’s copy of it. It stays on your computer: nothing is uploaded.
-              </EmptyDescription>
+              <EmptyDescription>Mario Kart Wii’s Race/Common.szs, or a mod’s copy of it. It stays on your computer: nothing is uploaded.</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <Button size="lg" onClick={() => browse.current?.click()}>
@@ -400,33 +457,66 @@ export function CommonEditorApp() {
           <Split
             sideLabel="Your file"
             side={
-              <div className="bg-card flex flex-col gap-4 rounded-xl border p-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-semibold tabular-nums">{changed}</span>
-                    <span className="text-muted-foreground text-xs">effect group{changed === 1 ? '' : 's'} recolored</span>
+              <>
+                <div className="bg-card flex flex-col gap-3 rounded-xl border p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-sm font-medium">Color themes</h2>
+                    <Button variant="ghost" size="xs" onClick={copyShareLink}>
+                      <LinkIcon data-icon="inline-start" aria-hidden="true" />
+                      Copy share link
+                    </Button>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-semibold tabular-nums">{texturesChanged}</span>
-                    <span className="text-muted-foreground text-xs">texture{texturesChanged === 1 ? '' : 's'} replaced</span>
-                  </div>
+                  <p className="text-muted-foreground text-[13px] leading-snug">
+                    One click colors the drift sparks, boosts, trick flash, Star and more. Your other picks stay as they are.
+                  </p>
+                  <ul className="grid grid-cols-2 gap-2">
+                    {PRESETS.map(preset => (
+                      <li key={preset.id}>
+                        <button
+                          type="button"
+                          onClick={() => applyPreset(preset)}
+                          title={preset.about}
+                          className="hover:bg-muted/60 flex w-full cursor-pointer flex-col gap-2 rounded-lg border p-2.5 text-left outline-none transition-[background-color,scale] duration-150 ease-(--ease-out) active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50"
+                        >
+                          <span className="flex h-3 overflow-hidden rounded-full" aria-hidden="true">
+                            {[...new Set(Object.values(preset.colors))].slice(0, 5).map(hex => (
+                              <span key={hex} className="flex-1" style={{ background: hex }} />
+                            ))}
+                          </span>
+                          <span className="text-[13px] font-medium">{preset.name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <Separator />
-                <h2 className="text-sm font-medium">How to use it</h2>
-                <ol className="text-muted-foreground flex list-decimal flex-col gap-2 pl-5 text-sm">
-                  <li>
-                    <b className="text-foreground font-medium">Click a swatch</b> and pick a new color. The strip under each name shows the colors it
-                    uses now.
-                  </li>
-                  <li>
-                    <b className="text-foreground font-medium">Save common.szs</b> (top right).
-                  </li>
-                  <li>
-                    <b className="text-foreground font-medium">Put the saved file in your game or mod</b> in place of the old one. Keep a copy of the
-                    old one in case you want it back.
-                  </li>
-                </ol>
-              </div>
+                <div className="bg-card flex flex-col gap-4 rounded-xl border p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-semibold tabular-nums">{changed}</span>
+                      <span className="text-muted-foreground text-xs">effect group{changed === 1 ? '' : 's'} recolored</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-semibold tabular-nums">{texturesChanged}</span>
+                      <span className="text-muted-foreground text-xs">texture{texturesChanged === 1 ? '' : 's'} replaced</span>
+                    </div>
+                  </div>
+                  <Separator />
+                  <h2 className="text-sm font-medium">How to use it</h2>
+                  <ol className="text-muted-foreground flex list-decimal flex-col gap-2 pl-5 text-sm">
+                    <li>
+                      <b className="text-foreground font-medium">Click a swatch</b> and pick a new color. The strip under each name shows the colors it uses
+                      now.
+                    </li>
+                    <li>
+                      <b className="text-foreground font-medium">Save common.szs</b> (top right).
+                    </li>
+                    <li>
+                      <b className="text-foreground font-medium">Put the saved file in your game or mod</b> in place of the old one. Keep a copy of the old one
+                      in case you want it back.
+                    </li>
+                  </ol>
+                </div>
+              </>
             }
           >
             <Reveal id={section} className="flex flex-col gap-6">
@@ -459,16 +549,22 @@ export function CommonEditorApp() {
                       </div>
                       <div className="flex items-center gap-1">
                         {/* One color for every effect listed in this section (after the search filter). */}
-                        <label className="hover:bg-muted relative flex h-8 cursor-pointer items-center gap-2 overflow-hidden rounded-lg px-2.5 text-sm font-medium transition-colors">
-                          <span aria-hidden="true" className="size-4 rounded-full border bg-[conic-gradient(red,yellow,lime,cyan,blue,magenta,red)]" />
-                          Color all
-                          <input
-                            type="color"
+                        <HexColorPopover
+                          value={allColor[sec] ?? '#ffffff'}
+                          onChange={hex => {
+                            setAllColor(c => ({ ...c, [sec]: hex }));
+                            setMany(ids, hex);
+                          }}
+                        >
+                          <button
+                            type="button"
                             aria-label={`One color for every effect in ${sec}`}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            onChange={e => setMany(ids, e.target.value)}
-                          />
-                        </label>
+                            className="hover:bg-muted relative flex h-8 cursor-pointer items-center gap-2 overflow-hidden rounded-lg px-2.5 text-sm font-medium transition-colors"
+                          >
+                            <span aria-hidden="true" className="size-4 rounded-full border bg-[conic-gradient(red,yellow,lime,cyan,blue,magenta,red)]" />
+                            Color all
+                          </button>
+                        </HexColorPopover>
                         {changedIn(sec) ? (
                           <Button variant="ghost" size="sm" onClick={() => setMany(ids, null)}>
                             <RotateCcwIcon data-icon="inline-start" aria-hidden="true" />
@@ -485,9 +581,7 @@ export function CommonEditorApp() {
               !EFFECT_GROUPS.some(
                 g => (section === 'all' || g.section === section) && (g.label + ' ' + g.about).toLowerCase().includes(query.trim().toLowerCase()),
               ) ? (
-                <p className="text-muted-foreground py-8 text-center text-sm">
-                  No effect matches “{query.trim()}”. Try a word like spark, smoke or boost.
-                </p>
+                <p className="text-muted-foreground py-8 text-center text-sm">No effect matches “{query.trim()}”. Try a word like spark, smoke or boost.</p>
               ) : null}
             </Reveal>
           </Split>

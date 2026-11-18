@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import { HexColorPopover } from '@/components/ui/hex-color-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select as SelectRoot, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -81,13 +82,14 @@ export function ColorField({ value, label, onChange }: ColorProps) {
   }
   return (
     <div className="flex items-center gap-2">
-      <input
-        type="color"
-        aria-label={label}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="border-input size-8 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5"
-      />
+      <HexColorPopover value={value} onChange={onChange}>
+        <button
+          type="button"
+          aria-label={label}
+          style={{ background: value }}
+          className="border-input size-8 shrink-0 cursor-pointer rounded-md border"
+        />
+      </HexColorPopover>
       <Input
         aria-label={`${label} hex`}
         placeholder="#rrggbb"
