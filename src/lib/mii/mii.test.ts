@@ -14,6 +14,8 @@ import {
   toStudio,
   withCreator,
   withName,
+  withGender,
+  STARTING_LOOK,
   type FieldKey,
   type Mii,
 } from './mii.ts';
@@ -86,4 +88,23 @@ test('studio mapping matches the Rust converter on known fields', () => {
 test('zero bytes and wrong lengths are not Miis', () => {
   assert.equal(isValidMii(new Uint8Array(MII_SIZE)), false);
   assert.equal(isValidMii(new Uint8Array(76)), false);
+});
+
+test('switching a fresh Mii to female gives the female starting face, and back', () => {
+  const girl = withGender(newMii(0), true);
+  assert.equal(get(girl, 'isGirl'), 1);
+  assert.equal(get(girl, 'hairType'), STARTING_LOOK.female.hairType);
+  assert.equal(get(girl, 'mouthType'), STARTING_LOOK.female.mouthType);
+  const boy = withGender(girl, false);
+  assert.equal(get(boy, 'isGirl'), 0);
+  assert.equal(get(boy, 'hairType'), STARTING_LOOK.male.hairType);
+  assert.deepEqual(newMii(0, true), girl);
+});
+
+test('switching gender keeps a face you already changed', () => {
+  const edited = set(newMii(0), 'hairType', 50);
+  const girl = withGender(edited, true);
+  assert.equal(get(girl, 'isGirl'), 1);
+  assert.equal(get(girl, 'hairType'), 50);
+  assert.equal(get(girl, 'eyeType'), STARTING_LOOK.male.eyeType);
 });

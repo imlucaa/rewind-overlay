@@ -156,17 +156,38 @@ export const withCreator = (mii: Mii, creator: string) => writeName(mii, 0x36, c
 export const miiIdClock = (unixSeconds: number) => Math.floor(Math.max(0, unixSeconds - 1_136_073_600) / 4) & 0x1fffffff;
 
 /** A new Mii: a normal Mii ID made now, no console (System ID 0), and a plain default face. */
-export function newMii(now = Date.now()): Mii {
+/** The starting hair, eyes, eyebrows and mouth for each gender. */
+export const STARTING_LOOK = {
+  male: { hairType: 33, eyeType: 2, eyebrowType: 6, mouthType: 23, mouthColor: 0 },
+  female: { hairType: 12, eyeType: 4, eyebrowType: 0, mouthType: 11, mouthColor: 1 },
+} as const satisfies Record<string, Partial<Record<FieldKey, number>>>;
+
+const lookOf = (girl: boolean) => (girl ? STARTING_LOOK.female : STARTING_LOOK.male);
+
+/** A new Mii: a normal Mii ID made now, no console (System ID 0), and a plain starting face for its gender. */
+export function newMii(now = Date.now(), girl = false): Mii {
   let mii = new Uint8Array(MII_SIZE) as Mii;
   const id = (0x80000000 | miiIdClock(now / 1000)) >>> 0;
   writeWord(mii, 0x18, 32, id);
   mii = setMany(mii, {
-    favoriteColor: 5, height: 64, weight: 64, hairType: 33, hairColor: 1, eyebrowType: 6, eyebrowRotation: 6,
-    eyebrowColor: 1, eyebrowSize: 4, eyebrowVertical: 10, eyebrowSpacing: 2, eyeType: 2, eyeRotation: 4, eyeVertical: 12,
-    eyeSize: 4, eyeSpacing: 2, noseType: 1, noseSize: 4, noseVertical: 9, mouthType: 23, mouthSize: 4, mouthVertical: 13,
+    favoriteColor: 5, height: 64, weight: 64, hairColor: 1, eyebrowRotation: 6,
+    eyebrowColor: 1, eyebrowSize: 4, eyebrowVertical: 10, eyebrowSpacing: 2, eyeRotation: 4, eyeVertical: 12,
+    eyeSize: 4, eyeSpacing: 2, noseType: 1, noseSize: 4, noseVertical: 9, mouthSize: 4, mouthVertical: 13,
     glassesSize: 4, glassesVertical: 10, mustacheSize: 4, mustacheVertical: 10, moleSize: 4, moleVertical: 20, moleHorizontal: 2,
+    isGirl: girl ? 1 : 0,
+    ...lookOf(girl),
   });
   return withName(mii, 'New Mii');
+}
+
+/**
+ * The Mii as a boy or a girl. Like on the Wii this changes the body; a Mii still wearing the other gender's starting
+ * face also gets this gender's starting face, so switching on a fresh Mii looks right. Faces you changed are kept.
+ */
+export function withGender(mii: Mii, girl: boolean): Mii {
+  const other = lookOf(!girl);
+  const untouched = (Object.keys(other) as FieldKey[]).every(k => get(mii, k) === other[k as keyof typeof other]);
+  return setMany(mii, { isGirl: girl ? 1 : 0, ...(untouched ? lookOf(girl) : {}) });
 }
 
 /** The look "Surprise me" may change. Positions and sizes stay, so the face never ends up scattered. */

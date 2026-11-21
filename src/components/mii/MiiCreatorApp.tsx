@@ -26,6 +26,7 @@ import {
   studioCode,
   studioUrl,
   withCreator,
+  withGender,
   withName,
   type FieldKey,
   type Mii,
@@ -423,7 +424,7 @@ export function MiiCreatorApp() {
             <DicesIcon data-icon="inline-start" />
             Surprise me
           </Button>
-          <Button variant="outline" onClick={() => commit(newMii())}>
+          <Button variant="outline" onClick={() => commit(newMii(Date.now(), get(mii, 'isGirl') === 1))}>
             <RotateCcwIcon data-icon="inline-start" />
             Start over
           </Button>
@@ -459,11 +460,14 @@ export function MiiCreatorApp() {
                     <Label>Gender</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {['Male', 'Female'].map((label, i) => (
-                        <Button key={label} variant={get(mii, 'isGirl') === i ? 'default' : 'outline'} onClick={() => change({ isGirl: i })}>
+                        <Button key={label} variant={get(mii, 'isGirl') === i ? 'default' : 'outline'} onClick={() => get(mii, 'isGirl') !== i && commit(withGender(mii, i === 1))}>
                           {label}
                         </Button>
                       ))}
                     </div>
+                    <p className="text-muted-foreground text-xs">
+                      Changes the body. A Mii you haven&rsquo;t styled yet also gets a matching starting face.
+                    </p>
                   </div>
                   <div className="grid gap-1.5">
                     <Label htmlFor="mii-month">Birthday</Label>
