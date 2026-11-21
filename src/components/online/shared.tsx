@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type ReactNode, type RefObject } from 'react';
-import { CheckIcon, CopyIcon, DownloadIcon, RefreshCwIcon, StarIcon } from 'lucide-react';
+import Link from 'next/link';
+import { CheckIcon, CopyIcon, DownloadIcon, PencilIcon, RefreshCwIcon, StarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -178,19 +179,29 @@ export function MiiButton({ name, mii }: { name: string; mii: string | null | un
   );
 }
 
-/** The profile's Download Mii button. */
-export function MiiActions({ name, mii }: { name: string; mii: string | null | undefined }) {
+/** The profile's Download Mii button, and Edit Mii (a copy in the Mii Creator) when the friend code is known. */
+export function MiiActions({ name, mii, fc }: { name: string; mii: string | null | undefined; fc?: string }) {
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={!miiBytes(mii)}
-      onClick={() => saveMii(name, mii)}
-      title="The .mii file Mii tools and Dolphin can import"
-    >
-      <DownloadIcon data-icon="inline-start" aria-hidden="true" />
-      Download Mii
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!miiBytes(mii)}
+        onClick={() => saveMii(name, mii)}
+        title="The .mii file Mii tools and Dolphin can import"
+      >
+        <DownloadIcon data-icon="inline-start" aria-hidden="true" />
+        Download Mii
+      </Button>
+      {fc && miiBytes(mii) ? (
+        <Button variant="outline" size="sm" asChild title="Open a copy of this Mii in the Mii Creator">
+          <Link href={`/mii-creator/?fc=${encodeURIComponent(fc)}`}>
+            <PencilIcon data-icon="inline-start" aria-hidden="true" />
+            Edit Mii
+          </Link>
+        </Button>
+      ) : null}
+    </>
   );
 }
 

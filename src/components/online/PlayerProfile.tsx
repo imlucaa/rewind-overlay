@@ -148,7 +148,7 @@ export function PlayerProfile({ fc, rooms, onLoaded, onPlayer, onRoom, onCompare
           <div className="flex flex-wrap gap-2">
             <WatchButton fc={p.friendCode} name={p.name} size="sm" />
             <CompareButton fc={p.friendCode} name={p.name} onCompare={onCompare} />
-            <MiiActions name={p.name} mii={p.miiData} />
+            <MiiActions name={p.name} mii={p.miiData} fc={p.friendCode} />
           </div>
         </div>
       </header>

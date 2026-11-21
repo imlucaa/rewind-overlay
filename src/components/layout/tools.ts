@@ -1,4 +1,4 @@
-import { AudioLinesIcon, GlobeIcon, MonitorPlayIcon, MusicIcon, PaletteIcon } from 'lucide-react';
+import { AudioLinesIcon, GlobeIcon, MonitorPlayIcon, MusicIcon, PaletteIcon, SmilePlusIcon } from 'lucide-react';
 
 // The tools. Icons say what each one makes: a stream overlay, music, colors, sound effects; then the rooms and rankings.
 export const TOOLS = [
@@ -7,6 +7,7 @@ export const TOOLS = [
   { href: '/common-szs/', label: 'common.szs', icon: PaletteIcon, about: 'Recolor drifts, boosts and other effects' },
   { href: '/sounds/', label: 'Sounds', icon: AudioLinesIcon, about: 'Swap the trick, boost and other sounds' },
   { href: '/rooms/', label: 'Rooms', icon: GlobeIcon, about: 'Live rooms, the leaderboard and player profiles' },
+  { href: '/mii-creator/', label: 'Mii Creator', icon: SmilePlusIcon, about: 'Make or edit a Wii Mii and download it' },
 ] as const;
 
 /** The tool a path belongs to (the overlay for anything else). */
